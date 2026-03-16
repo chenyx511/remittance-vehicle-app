@@ -39,9 +39,12 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+// 部署到子路径（如 GitHub Pages）时需设置 VITE_BASE_PATH，例如 /remittance-vehicle-app
+const basename = (import.meta.env.VITE_BASE_PATH ?? '').replace(/\/$/, '');
+
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={basename || undefined}>
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Login />} />
