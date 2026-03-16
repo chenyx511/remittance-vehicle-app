@@ -1,23 +1,16 @@
-# 推送到 main 分支时自动构建并部署到 GitHub Pages
+# 推送到 main 时自动构建并发布到 gh-pages 分支，供 GitHub Pages 使用
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
-  # 允许在 GitHub 网页上手动点击 Run workflow 触发
   workflow_dispatch:
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: true
+  contents: write
 
 jobs:
-  build:
+  deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -26,7 +19,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
 
       - name: Install
@@ -35,25 +28,15 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          # 使用仓库名作为子路径，对应 https://<username>.github.io/<repo-name>/
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
 
-      # SPA 路由：刷新任意路径时由 404 页兜底到 index.html
-      - name: Copy index to 404
+      - name: Copy index to 404 (SPA 路由)
         run: cp dist/index.html dist/404.html
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: dist
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true

@@ -8,8 +8,9 @@
 
 1. 打开：**https://github.com/chenyx511/remittance-vehicle-app/settings/pages**
 2. 在 **Build and deployment** 区域：
-   - **Source** 选择 **GitHub Actions**（不要选 “Deploy from a branch”）
-3. 保存后无需其他设置，发布由本仓库的 Actions 工作流完成。
+   - **Source** 选择 **Deploy from a branch**
+   - **Branch** 选择 **gh-pages**，目录选 **/ (root)**，点 Save
+3. 保存后，网站会从 `gh-pages` 分支发布（该分支由 Actions 自动推送，无需手建）。
 
 ---
 
@@ -26,7 +27,7 @@ git commit -m "chore: trigger GitHub Pages deploy"
 git push origin main
 ```
 
-推送后约 1～2 分钟，Actions 会自动构建并发布。
+推送后约 1～2 分钟，Actions 会自动构建并把结果推到 `gh-pages`，Pages 会自动更新。
 
 ### 方式 B：在网页上手动运行工作流
 
@@ -44,5 +45,5 @@ git push origin main
 
 若仍是 404：
 
-1. 再确认 **Settings → Pages** 里 Source 为 **GitHub Actions**
-2. 打开 **Actions** 页，看最近一次 “Deploy to GitHub Pages” 是否成功（绿色勾）；若失败，点进去看报错信息。
+1. 确认 **Settings → Pages** 里 Source 为 **Deploy from a branch**，Branch 为 **gh-pages**
+2. 打开 **Actions**，看最近一次 “Deploy to GitHub Pages” 是否成功（绿色勾）；若失败，点进去看报错。
