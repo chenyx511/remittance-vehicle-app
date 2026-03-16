@@ -86,20 +86,22 @@
     </div>
     <script type="module" src="/src/main.tsx"></script>
 
-    <!-- Register Service Worker -->
+    <!-- 相对路径，适配子路径部署（如 GitHub Pages） -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker
-            .register('/sw.js')
-            .then((registration) => {
-              console.log('SW registered:', registration);
-            })
-            .catch((error) => {
-              console.log('SW registration failed:', error);
-            });
+          var swPath = './sw.js';
+          navigator.serviceWorker.register(swPath).catch(function() {});
         });
       }
+      // 若 8 秒后仍为加载态，提示用户（可能是脚本 404 或缓存问题）
+      setTimeout(function() {
+        var root = document.getElementById('root');
+        var loading = root && root.querySelector('.loading-screen');
+        if (loading) {
+          loading.innerHTML = '<p style="font-family: system-ui; text-align: center;">加载超时，请按 <kbd>Ctrl+Shift+R</kbd>（Mac: <kbd>Cmd+Shift+R</kbd>）强制刷新，或按 F12 打开控制台查看报错。</p>';
+        }
+      }, 8000);
     </script>
   </body>
 </html>
