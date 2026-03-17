@@ -204,6 +204,9 @@
     "title": "車両申請",
     "subtitle": "車両申請とスケジュール管理",
     "apply": "車両申請",
+    "create": "車両登録",
+    "createSubtitle": "新しい車両情報を追加",
+    "addVehicle": "車両登録",
     "list": "申請一覧",
     "detail": "申請詳細",
     "schedule": "車両スケジュール",
@@ -275,7 +278,18 @@
     "pleaseSelectStartTime": "開始時間を選択してください",
     "pleaseSelectEndTime": "終了時間を選択してください",
     "purposeRequired": "利用目的を入力してください",
-    "noVehicleRequests": "車両申請がありません"
+    "noVehicleRequests": "車両申請がありません",
+    "plateNumberRequired": "ナンバープレートを入力してください",
+    "plateNumberPlaceholder": "例：京A12345",
+    "brandPlaceholder": "例：トヨタ、ホンダ",
+    "modelPlaceholder": "例：カムリ、アコード",
+    "colorPlaceholder": "例：黒、白",
+    "entityStatusLabel": "車両状態",
+    "entityStatus": {
+      "AVAILABLE": "利用可能",
+      "IN_USE": "使用中",
+      "MAINTENANCE": "メンテナンス中"
+    }
   },
   "notifications": {
     "title": "通知センター",

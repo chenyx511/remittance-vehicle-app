@@ -9,6 +9,7 @@ import { RemittanceCreate } from '@/pages/remittances/RemittanceCreate';
 import { RemittanceDetail } from '@/pages/remittances/RemittanceDetail';
 import { VehicleList } from '@/pages/vehicles/VehicleList';
 import { VehicleApply } from '@/pages/vehicles/VehicleApply';
+import { VehicleCreate } from '@/pages/vehicles/VehicleCreate';
 import { VehicleDetail } from '@/pages/vehicles/VehicleDetail';
 import { VehicleSchedule } from '@/pages/vehicles/VehicleSchedule';
 import { Notifications } from '@/pages/Notifications';
@@ -124,6 +125,16 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <VehicleApply />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/vehicles/create"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <VehicleCreate />
               </AppLayout>
             </ProtectedRoute>
           }

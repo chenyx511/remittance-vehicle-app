@@ -204,6 +204,9 @@
     "title": "用车申请",
     "subtitle": "管理用车申请和车辆调度",
     "apply": "申请用车",
+    "create": "录入车辆",
+    "createSubtitle": "添加新的车辆信息",
+    "addVehicle": "录入车辆",
     "list": "申请列表",
     "detail": "申请详情",
     "schedule": "车辆日程",
@@ -275,7 +278,18 @@
     "pleaseSelectStartTime": "请选择开始时间",
     "pleaseSelectEndTime": "请选择结束时间",
     "purposeRequired": "请输入用车目的",
-    "noVehicleRequests": "暂无用车申请"
+    "noVehicleRequests": "暂无用车申请",
+    "plateNumberRequired": "请输入车牌号",
+    "plateNumberPlaceholder": "如：京A12345",
+    "brandPlaceholder": "如：丰田、本田",
+    "modelPlaceholder": "如：凯美瑞、雅阁",
+    "colorPlaceholder": "如：黑色、白色",
+    "entityStatusLabel": "车辆状态",
+    "entityStatus": {
+      "AVAILABLE": "可用",
+      "IN_USE": "使用中",
+      "MAINTENANCE": "维护中"
+    }
   },
   "notifications": {
     "title": "通知中心",

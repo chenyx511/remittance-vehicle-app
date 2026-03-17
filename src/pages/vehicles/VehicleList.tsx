@@ -152,6 +152,9 @@ export function VehicleList() {
           <Button variant="outline" onClick={() => navigate('/vehicles/schedule')}>
             {t('vehicle.schedule')}
           </Button>
+          <Button variant="outline" onClick={() => navigate('/vehicles/create')}>
+            {t('vehicle.addVehicle')}
+          </Button>
           <Button onClick={() => navigate('/vehicles/apply')}>
             <Plus className="mr-2 h-4 w-4" />
             {t('vehicle.apply')}

@@ -447,6 +447,31 @@ export const vehicleApi = {
     };
   },
 
+  createVehicle: async (data: Partial<Vehicle>): Promise<ApiResponse<Vehicle>> => {
+    await delay(500);
+    const plateNumber = (data.plateNumber || '').trim();
+    if (!plateNumber) {
+      throw new Error('请输入车牌号');
+    }
+    if (mockVehicles.some((v) => v.plateNumber === plateNumber)) {
+      throw new Error('该车牌号已存在');
+    }
+    const newVehicle: Vehicle = {
+      id: String(Date.now()),
+      plateNumber,
+      brand: data.brand,
+      model: data.model,
+      color: data.color,
+      status: data.status || 'AVAILABLE',
+    };
+    mockVehicles.push(newVehicle);
+    return {
+      code: 200,
+      message: '创建成功',
+      data: newVehicle,
+    };
+  },
+
   getSchedule: async (
     vehicleId: string,
     startDate: string,
