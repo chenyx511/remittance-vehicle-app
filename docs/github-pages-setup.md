@@ -4,12 +4,20 @@
 
 ---
 
+## ⚠️ 重要：必须用 gh-pages 分支
+
+若打开链接后一直「加载中」或控制台出现 **`/src/main.tsx 404`**，说明 Pages 当前在用 **main 分支的源码**，而不是构建后的网站。
+
+**请务必**在 Settings → Pages 里把 **Branch 选成 gh-pages**（不要选 main）。只有 gh-pages 上才是构建好的 `dist` 内容，main 分支的 index 会直接请求源码导致 404。
+
+---
+
 ## 一、在仓库里开启 GitHub Pages（必做一次）
 
 1. 打开：**https://github.com/chenyx511/remittance-vehicle-app/settings/pages**
 2. 在 **Build and deployment** 区域：
    - **Source** 选择 **Deploy from a branch**
-   - **Branch** 选择 **gh-pages**，目录选 **/ (root)**，点 Save
+   - **Branch** 选择 **gh-pages**（必须选此项），目录选 **/ (root)**，点 Save
 3. 保存后，网站会从 `gh-pages` 分支发布（该分支由 Actions 自动推送，无需手建）。
 
 ---

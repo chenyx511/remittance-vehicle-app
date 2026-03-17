@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Bell, Check, ArrowRight, Banknote, Car } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { useNotificationStore } from '@/stores/notificationStore';
 import type { Notification } from '@/types';
 
 export function Notifications() {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { unreadCount, markAsRead, markAllAsRead } = useNotificationStore();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -60,13 +62,13 @@ export function Notifications() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">通知中心</h1>
-          <p className="text-muted-foreground">您有 {unreadCount} 条未读通知</p>
+          <h1 className="text-2xl font-bold">{t('notifications.title')}</h1>
+          <p className="text-muted-foreground">{t('notifications.subtitleWithCount', { count: unreadCount })}</p>
         </div>
         {unreadCount > 0 && (
           <Button variant="outline" onClick={handleMarkAllAsRead}>
             <Check className="mr-2 h-4 w-4" />
-            全部标记已读
+            {t('notifications.markAllAsRead')}
           </Button>
         )}
       </div>
@@ -75,7 +77,7 @@ export function Notifications() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="all">
-            全部
+            {t('common.all')}
             {notifications.length > 0 && (
               <Badge variant="secondary" className="ml-2">
                 {notifications.length}
@@ -83,7 +85,7 @@ export function Notifications() {
             )}
           </TabsTrigger>
           <TabsTrigger value="unread">
-            未读
+            {t('notifications.unread')}
             {unreadNotifications.length > 0 && (
               <Badge variant="destructive" className="ml-2">
                 {unreadNotifications.length}
@@ -97,6 +99,8 @@ export function Notifications() {
             notifications={notifications}
             isLoading={isLoading}
             onMarkAsRead={handleMarkAsRead}
+            t={t}
+            locale={i18n.language}
           />
         </TabsContent>
 
@@ -105,7 +109,9 @@ export function Notifications() {
             notifications={unreadNotifications}
             isLoading={isLoading}
             onMarkAsRead={handleMarkAsRead}
-            emptyMessage="暂无未读通知"
+            emptyMessage={t('notifications.noUnreadNotifications')}
+            t={t}
+            locale={i18n.language}
           />
         </TabsContent>
       </Tabs>
@@ -118,14 +124,19 @@ interface NotificationListProps {
   isLoading: boolean;
   onMarkAsRead: (notification: Notification) => void;
   emptyMessage?: string;
+  t: (key: string, options?: Record<string, unknown>) => string;
+  locale: string;
 }
 
 function NotificationList({
   notifications,
   isLoading,
   onMarkAsRead,
-  emptyMessage = '暂无通知',
+  emptyMessage,
+  t,
+  locale,
 }: NotificationListProps) {
+  const defaultEmpty = t('notifications.noNotifications');
   if (isLoading) {
     return (
       <Card>
@@ -143,7 +154,7 @@ function NotificationList({
       <Card>
         <CardContent className="p-12 text-center">
           <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground">{emptyMessage}</p>
+          <p className="text-muted-foreground">{emptyMessage ?? defaultEmpty}</p>
         </CardContent>
       </Card>
     );
@@ -172,19 +183,19 @@ function NotificationList({
                 <div className="flex items-start justify-between gap-2">
                   <div>
                     <p className={`font-medium ${!notification.isRead ? 'text-primary' : ''}`}>
-                      {notification.title}
+                      {translateNotificationTitle(notification.type, notification.title, t)}
                     </p>
                     {notification.content && (
                       <p className="text-sm text-muted-foreground mt-1">{notification.content}</p>
                     )}
                     <p className="text-xs text-muted-foreground mt-2">
-                      {formatTimeAgo(notification.createdAt)}
+                      {formatTimeAgo(notification.createdAt, t, locale)}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     {!notification.isRead && (
                       <Badge variant="destructive" className="text-xs">
-                        未读
+                        {t('notifications.unread')}
                       </Badge>
                     )}
                     <ArrowRight className="h-4 w-4 text-muted-foreground" />
@@ -199,6 +210,16 @@ function NotificationList({
   );
 }
 
+function translateNotificationTitle(
+  type: string,
+  fallback: string,
+  t: (key: string) => string,
+): string {
+  const key = `notifications.types.${type}`;
+  const translated = t(key);
+  return translated !== key ? translated : fallback;
+}
+
 function getNotificationIcon(type: string) {
   if (type.startsWith('REMITTANCE')) {
     return <Banknote className="h-5 w-5 text-primary" />;
@@ -209,7 +230,11 @@ function getNotificationIcon(type: string) {
   return <Bell className="h-5 w-5 text-muted-foreground" />;
 }
 
-function formatTimeAgo(dateString: string) {
+function formatTimeAgo(
+  dateString: string,
+  t: (key: string, options?: Record<string, unknown>) => string,
+  locale: string,
+) {
   const date = new Date(dateString);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
@@ -217,9 +242,10 @@ function formatTimeAgo(dateString: string) {
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
 
-  if (minutes < 1) return '刚刚';
-  if (minutes < 60) return `${minutes}分钟前`;
-  if (hours < 24) return `${hours}小时前`;
-  if (days < 7) return `${days}天前`;
-  return date.toLocaleDateString('zh-CN');
+  if (minutes < 1) return t('common.justNow');
+  if (minutes < 60) return t('common.minutesAgo', { count: minutes });
+  if (hours < 24) return t('common.hoursAgo', { count: hours });
+  if (days < 7) return t('common.daysAgo', { count: days });
+  const dateLocale = locale.startsWith('ja') ? 'ja-JP' : 'zh-CN';
+  return date.toLocaleDateString(dateLocale);
 }

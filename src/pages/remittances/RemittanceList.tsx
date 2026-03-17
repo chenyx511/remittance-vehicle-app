@@ -32,7 +32,7 @@ export function RemittanceList() {
   const [requests, setRequests] = useState<RemittanceRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedRequest, setSelectedRequest] = useState<RemittanceRequest | null>(null);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
@@ -47,7 +47,7 @@ export function RemittanceList() {
     setIsLoading(true);
     try {
       const response = await remittanceApi.getList({
-        status: statusFilter || undefined,
+        status: statusFilter === 'all' || !statusFilter ? undefined : statusFilter,
         keyword: searchKeyword || undefined,
       });
       setRequests(response.data.list);
@@ -149,10 +149,10 @@ export function RemittanceList() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="全部状态" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">全部状态</SelectItem>
+<SelectValue placeholder="全部状态" />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="all">全部状态</SelectItem>
                 <SelectItem value="PENDING">待审批</SelectItem>
                 <SelectItem value="SUPERVISOR_APPROVED">上级已批准</SelectItem>
                 <SelectItem value="FINANCE_PROCESSING">财务处理中</SelectItem>

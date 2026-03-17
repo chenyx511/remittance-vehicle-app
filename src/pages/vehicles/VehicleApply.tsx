@@ -133,7 +133,7 @@ export function VehicleApply() {
                 </SelectTrigger>
                 <SelectContent>
                   {vehicles.length === 0 ? (
-                    <SelectItem value="" disabled>
+                    <SelectItem value="__none__" disabled>
                       暂无可用车
                     </SelectItem>
                   ) : (

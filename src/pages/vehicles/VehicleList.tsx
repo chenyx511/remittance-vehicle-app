@@ -33,7 +33,7 @@ export function VehicleList() {
   const [requests, setRequests] = useState<VehicleRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
   const [selectedRequest, setSelectedRequest] = useState<VehicleRequest | null>(null);
   const [dialogType, setDialogType] = useState<'approve' | 'reject' | 'start' | 'complete' | null>(
     null,
@@ -50,7 +50,7 @@ export function VehicleList() {
     setIsLoading(true);
     try {
       const response = await vehicleApi.getList({
-        status: statusFilter || undefined,
+        status: statusFilter === 'all' || !statusFilter ? undefined : statusFilter,
       });
       setRequests(response.data.list);
     } catch {
@@ -169,10 +169,10 @@ export function VehicleList() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-40">
-                <SelectValue placeholder="全部状态" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="">全部状态</SelectItem>
+<SelectValue placeholder="全部状态" />
+                </SelectTrigger>
+                <SelectContent>
+                <SelectItem value="all">全部状态</SelectItem>
                 <SelectItem value="PENDING">待审批</SelectItem>
                 <SelectItem value="APPROVED">已批准</SelectItem>
                 <SelectItem value="IN_USE">使用中</SelectItem>

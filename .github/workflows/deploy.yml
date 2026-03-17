@@ -1,4 +1,5 @@
 # 推送到 main 时自动构建并发布到 gh-pages 分支，供 GitHub Pages 使用
+# 重要：仓库 Settings → Pages 必须选 "Deploy from a branch"，Branch 选 gh-pages，否则会看到 /src/main.tsx 404
 name: Deploy to GitHub Pages
 
 on:

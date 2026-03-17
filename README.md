@@ -78,6 +78,31 @@ npm run format
 
 ---
 
+## 构建与预览
+
+- **本地构建**（产出在 `dist/`）：
+
+```bash
+npm run build
+```
+
+- **本地预览构建结果**（默认用 Vite 的 `base: './'`，根路径访问即可）：
+
+```bash
+npm run preview
+```
+
+如需模拟 GitHub Pages 子路径（如 `/remittance-vehicle-app/`），可先按子路径构建再起静态服务：
+
+```bash
+VITE_BASE_PATH=/remittance-vehicle-app/ npm run build
+npx serve dist -p 5000
+```
+
+浏览器访问 `http://localhost:5000/remittance-vehicle-app/` 进行验证。
+
+---
+
 ## 部署到 GitHub
 
 ### 一、把代码推送到 GitHub
@@ -111,10 +136,11 @@ git push -u origin main
 
 若希望在线访问该应用（例如 `https://<你的用户名>.github.io/<仓库名>/`）：
 
-1. 打开仓库 **Settings → Pages**。
-2. 在 **Build and deployment** 里，**Source** 选择 **GitHub Actions**。
-3. 保存后，每次推送到 `main` 分支会自动运行 `.github/workflows/deploy.yml`，构建并部署到 GitHub Pages。
-4. 部署完成后，在 **Actions** 里可查看运行记录；访问地址为：  
-   `https://<你的用户名>.github.io/<仓库名>/`
+1. 打开仓库 **Settings → Pages**（如：`https://github.com/<用户名>/<仓库名>/settings/pages`）。
+2. 在 **Build and deployment** 里：
+   - **Source** 选择 **Deploy from a branch**（不要选 GitHub Actions）。
+   - **Branch** 选择 **gh-pages**，目录选 **/ (root)**，保存。
+3. 每次推送到 `main` 分支会触发 `.github/workflows/deploy.yml`：在 Actions 里构建，并把 `dist` 推到 **gh-pages** 分支；Pages 从该分支发布，所以必须选 gh-pages。
+4. 部署完成后访问：`https://<你的用户名>.github.io/<仓库名>/`；详细步骤见 **docs/github-pages-setup.md**。
 
-若仓库默认分支是 `master`，需要把 `.github/workflows/deploy.yml` 里的 `branches: [main]` 改成 `branches: [master]`，或把默认分支改为 `main`。
+若仓库默认分支是 `master`，需把 `.github/workflows/deploy.yml` 里的 `branches: [main]` 改为 `branches: [master]`，或将默认分支改为 `main`。

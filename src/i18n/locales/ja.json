@@ -40,7 +40,11 @@
     "createdAt": "作成日時",
     "updatedAt": "更新日時",
     "action": "操作",
-    "actions": "操作"
+    "actions": "操作",
+    "justNow": "たった今",
+    "minutesAgo": "{{count}}分前",
+    "hoursAgo": "{{count}}時間前",
+    "daysAgo": "{{count}}日前"
   },
   "auth": {
     "login": "ログイン",
@@ -194,6 +198,8 @@
   "notifications": {
     "title": "通知センター",
     "subtitle": "未読通知",
+    "subtitleWithCount": "未読が{{count}}件あります",
+    "unread": "未読",
     "markAsRead": "既読にする",
     "markAllAsRead": "すべて既読にする",
     "noNotifications": "通知がありません",

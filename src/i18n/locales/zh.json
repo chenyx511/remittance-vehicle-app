@@ -40,7 +40,11 @@
     "createdAt": "创建时间",
     "updatedAt": "更新时间",
     "action": "操作",
-    "actions": "操作"
+    "actions": "操作",
+    "justNow": "刚刚",
+    "minutesAgo": "{{count}}分钟前",
+    "hoursAgo": "{{count}}小时前",
+    "daysAgo": "{{count}}天前"
   },
   "auth": {
     "login": "登录",
@@ -194,6 +198,8 @@
   "notifications": {
     "title": "通知中心",
     "subtitle": "未读通知",
+    "subtitleWithCount": "您有 {{count}} 条未读通知",
+    "unread": "未读",
     "markAsRead": "标记已读",
     "markAllAsRead": "全部标记已读",
     "noNotifications": "暂无通知",
