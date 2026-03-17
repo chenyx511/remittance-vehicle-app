@@ -11,6 +11,7 @@ import { VehicleList } from '@/pages/vehicles/VehicleList';
 import { VehicleApply } from '@/pages/vehicles/VehicleApply';
 import { VehicleCreate } from '@/pages/vehicles/VehicleCreate';
 import { VehicleDetail } from '@/pages/vehicles/VehicleDetail';
+import { VehicleManage } from '@/pages/vehicles/VehicleManage';
 import { VehicleSchedule } from '@/pages/vehicles/VehicleSchedule';
 import { Notifications } from '@/pages/Notifications';
 import { Profile } from '@/pages/Profile';
@@ -135,6 +136,16 @@ function App() {
             <ProtectedRoute>
               <AppLayout>
                 <VehicleCreate />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/vehicles/manage"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <VehicleManage />
               </AppLayout>
             </ProtectedRoute>
           }

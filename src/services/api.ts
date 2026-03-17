@@ -581,12 +581,29 @@ export const vehicleApi = {
     };
   },
 
-  getVehicles: async (): Promise<ApiResponse<Vehicle[]>> => {
+  getVehicles: async (params?: {
+    status?: string;
+    keyword?: string;
+  }): Promise<ApiResponse<Vehicle[]>> => {
     await delay(300);
+    let list = [...mockVehicles];
+    if (params?.status) {
+      list = list.filter((v) => v.status === params.status);
+    }
+    if (params?.keyword) {
+      const kw = params.keyword.toLowerCase().trim();
+      list = list.filter(
+        (v) =>
+          v.plateNumber.toLowerCase().includes(kw) ||
+          (v.brand || '').toLowerCase().includes(kw) ||
+          (v.model || '').toLowerCase().includes(kw) ||
+          (v.color || '').toLowerCase().includes(kw),
+      );
+    }
     return {
       code: 200,
       message: 'success',
-      data: mockVehicles,
+      data: list,
     };
   },
 
@@ -613,6 +630,68 @@ export const vehicleApi = {
       code: 200,
       message: '创建成功',
       data: newVehicle,
+    };
+  },
+
+  updateVehicle: async (id: string, data: Partial<Vehicle>): Promise<ApiResponse<Vehicle>> => {
+    await delay(300);
+    const vehicle = mockVehicles.find((v) => v.id === id);
+    if (!vehicle) {
+      throw new Error('车辆不存在');
+    }
+
+    const nextPlate = (data.plateNumber ?? vehicle.plateNumber).trim();
+    if (!nextPlate) {
+      throw new Error('请输入车牌号');
+    }
+    if (mockVehicles.some((v) => v.id !== id && v.plateNumber === nextPlate)) {
+      throw new Error('该车牌号已存在');
+    }
+
+    vehicle.plateNumber = nextPlate;
+    vehicle.brand = data.brand ?? vehicle.brand;
+    vehicle.model = data.model ?? vehicle.model;
+    vehicle.color = data.color ?? vehicle.color;
+    vehicle.status = data.status ?? vehicle.status;
+
+    // 同步更新申请中的车辆快照
+    mockVehicleRequests.forEach((req) => {
+      if (req.vehicleId === id && req.vehicle) {
+        req.vehicle.plateNumber = vehicle.plateNumber;
+        req.vehicle.brand = vehicle.brand;
+        req.vehicle.model = vehicle.model;
+        req.vehicle.color = vehicle.color;
+        req.vehicle.status = vehicle.status;
+      }
+    });
+
+    saveVehicles(mockVehicles);
+    saveVehicleRequests(mockVehicleRequests);
+    return {
+      code: 200,
+      message: '更新成功',
+      data: vehicle,
+    };
+  },
+
+  deleteVehicle: async (id: string): Promise<ApiResponse<null>> => {
+    await delay(300);
+    const idx = mockVehicles.findIndex((v) => v.id === id);
+    if (idx < 0) {
+      throw new Error('车辆不存在');
+    }
+    const hasActiveRequest = mockVehicleRequests.some(
+      (r) => r.vehicleId === id && ['PENDING', 'APPROVED', 'IN_USE'].includes(r.status),
+    );
+    if (hasActiveRequest) {
+      throw new Error('该车辆存在进行中的用车申请，无法删除');
+    }
+    mockVehicles.splice(idx, 1);
+    saveVehicles(mockVehicles);
+    return {
+      code: 200,
+      message: '删除成功',
+      data: null,
     };
   },
 
