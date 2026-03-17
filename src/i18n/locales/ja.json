@@ -319,6 +319,7 @@
     "permissions": "権限説明",
     "editProfile": "プロフィール編集",
     "changeAvatar": "アバター変更",
+    "phonePlaceholder": "電話番号を入力",
     "permissionsList": {
       "STAFF": ["送金申請の作成", "車両申請の作成", "自分の申請履歴の閲覧"],
       "SUPERVISOR": ["送金申請の承認", "車両申請の承認", "部署のすべての申請の閲覧"],

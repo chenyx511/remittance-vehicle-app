@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Mail, Phone, Building, Shield, Camera, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/stores/authStore';
 
 export function Profile() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
@@ -18,20 +20,8 @@ export function Profile() {
     phone: user?.phone || '',
   });
 
-  const getRoleLabel = (role?: string) => {
-    switch (role) {
-      case 'STAFF':
-        return '担当';
-      case 'SUPERVISOR':
-        return '上级';
-      case 'FINANCE':
-        return '财务';
-      case 'ADMIN':
-        return '管理员';
-      default:
-        return '';
-    }
-  };
+  const permissions = (user?.role && t(`profile.permissionsList.${user.role}`, { returnObjects: true })) as string[] | false;
+  const permissionItems = Array.isArray(permissions) ? permissions : [];
 
   const getRoleBadgeColor = (role?: string) => {
     switch (role) {
@@ -61,8 +51,8 @@ export function Profile() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">个人中心</h1>
-          <p className="text-muted-foreground">管理您的个人信息</p>
+          <h1 className="text-2xl font-bold">{t('profile.title')}</h1>
+          <p className="text-muted-foreground">{t('profile.subtitle')}</p>
         </div>
       </div>
 
@@ -87,7 +77,7 @@ export function Profile() {
             <div className="text-center sm:text-left flex-1">
               <div className="flex flex-col sm:flex-row items-center gap-2">
                 <h2 className="text-2xl font-bold">{user?.username}</h2>
-                <Badge className={getRoleBadgeColor(user?.role)}>{getRoleLabel(user?.role)}</Badge>
+                <Badge className={getRoleBadgeColor(user?.role)}>{user?.role ? t(`roles.${user.role}`) : ''}</Badge>
               </div>
               <p className="text-muted-foreground">{user?.department}</p>
               <div className="flex flex-wrap justify-center sm:justify-start gap-4 mt-4 text-sm text-muted-foreground">
@@ -107,7 +97,7 @@ export function Profile() {
               variant="outline"
               onClick={() => (isEditing ? handleSave() : setIsEditing(true))}
             >
-              {isEditing ? '保存' : '编辑资料'}
+              {isEditing ? t('common.save') : t('profile.editProfile')}
             </Button>
           </div>
         </CardContent>
@@ -120,16 +110,16 @@ export function Profile() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-5 w-5" />
-              基本信息
+              {t('profile.basicInfo')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>用户名</Label>
+              <Label>{t('auth.username')}</Label>
               <Input value={user?.username} disabled />
             </div>
             <div>
-              <Label>邮箱</Label>
+              <Label>{t('auth.email')}</Label>
               <Input
                 value={formData.email}
                 onChange={(e) => setFormData((prev) => ({ ...prev, email: e.target.value }))}
@@ -137,12 +127,12 @@ export function Profile() {
               />
             </div>
             <div>
-              <Label>手机号</Label>
+              <Label>{t('auth.phone')}</Label>
               <Input
                 value={formData.phone}
                 onChange={(e) => setFormData((prev) => ({ ...prev, phone: e.target.value }))}
                 disabled={!isEditing}
-                placeholder="请输入手机号"
+                placeholder={t('profile.phonePlaceholder')}
               />
             </div>
           </CardContent>
@@ -153,17 +143,17 @@ export function Profile() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5" />
-              工作信息
+              {t('profile.workInfo')}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label>部门</Label>
+              <Label>{t('auth.department')}</Label>
               <Input value={user?.department} disabled />
             </div>
             <div>
-              <Label>角色</Label>
-              <Input value={getRoleLabel(user?.role)} disabled />
+              <Label>{t('auth.role')}</Label>
+              <Input value={user?.role ? t(`roles.${user.role}`) : ''} disabled />
             </div>
           </CardContent>
         </Card>
@@ -174,59 +164,17 @@ export function Profile() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Shield className="h-5 w-5" />
-            权限说明
+            {t('profile.permissions')}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {user?.role === 'STAFF' && (
-              <>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>提交汇款申请</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>申请用车</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>查看自己的申请记录</span>
-                </div>
-              </>
-            )}
-            {user?.role === 'SUPERVISOR' && (
-              <>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>审批汇款申请</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>审批用车申请</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>查看部门所有申请</span>
-                </div>
-              </>
-            )}
-            {user?.role === 'FINANCE' && (
-              <>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>处理汇款申请</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>上传汇款凭证</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-green-500" />
-                  <span>查看所有汇款记录</span>
-                </div>
-              </>
-            )}
+            {permissionItems.map((item, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <Check className="h-4 w-4 text-green-500" />
+                <span>{item}</span>
+              </div>
+            ))}
           </div>
         </CardContent>
       </Card>

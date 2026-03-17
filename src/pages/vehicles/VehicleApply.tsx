@@ -39,7 +39,7 @@ export function VehicleApply() {
   const fetchVehicles = async () => {
     try {
       const response = await vehicleApi.getVehicles();
-      setVehicles(response.data.filter((v) => v.status === 'AVAILABLE'));
+      setVehicles(response.data);
     } catch {
       console.error('Failed to fetch vehicles');
     }
@@ -139,11 +139,18 @@ export function VehicleApply() {
                       {t('vehicle.noAvailableVehicles')}
                     </SelectItem>
                   ) : (
-                    vehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {vehicle.plateNumber} - {vehicle.brand} {vehicle.model} ({vehicle.color})
-                      </SelectItem>
-                    ))
+                    vehicles.map((vehicle) => {
+                      const available = vehicle.status === 'AVAILABLE';
+                      const parts = [vehicle.brand, vehicle.model].filter(Boolean).join(' ');
+                      const colorPart = vehicle.color ? ` (${vehicle.color})` : '';
+                      const label = `${vehicle.plateNumber}${parts ? ` - ${parts}` : ''}${colorPart}` || vehicle.plateNumber;
+                      const statusSuffix = !available ? ` [${t(`vehicle.entityStatus.${vehicle.status}`)}]` : '';
+                      return (
+                        <SelectItem key={vehicle.id} value={vehicle.id} disabled={!available}>
+                          {label}{statusSuffix}
+                        </SelectItem>
+                      );
+                    })
                   )}
                 </SelectContent>
               </Select>

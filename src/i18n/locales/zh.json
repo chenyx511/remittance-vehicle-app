@@ -319,6 +319,7 @@
     "permissions": "权限说明",
     "editProfile": "编辑资料",
     "changeAvatar": "更换头像",
+    "phonePlaceholder": "请输入手机号",
     "permissionsList": {
       "STAFF": ["提交汇款申请", "申请用车", "查看自己的申请记录"],
       "SUPERVISOR": ["审批汇款申请", "审批用车申请", "查看部门所有申请"],
