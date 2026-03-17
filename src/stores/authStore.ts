@@ -84,10 +84,11 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-storage',
-      // 持久化 token 和 user，方便刷新后快速恢复登录态
+      // 持久化 token、user、isAuthenticated，刷新后恢复登录态，避免任意页刷新都回到登录页
       partialize: (state) => ({
         token: state.token,
         user: state.user,
+        isAuthenticated: state.isAuthenticated,
       }),
       // 从本地存储恢复时，同步到 mock API 的 currentUser
       onRehydrateStorage: () => (state) => {

@@ -14,17 +14,30 @@ import { VehicleSchedule } from '@/pages/vehicles/VehicleSchedule';
 import { Notifications } from '@/pages/Notifications';
 import { Profile } from '@/pages/Profile';
 import { useAuthStore } from '@/stores/authStore';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 // Protected Route Component
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
+  // 等待持久化恢复完成再判断登录态，避免刷新时因尚未 rehydrate 误判为未登录
+  const [hasHydrated, setHasHydrated] = useState(() =>
+    typeof useAuthStore.persist?.hasHydrated === 'function'
+      ? useAuthStore.persist.hasHydrated()
+      : true,
+  );
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    if (hasHydrated) return;
+    const unsub = useAuthStore.persist?.onFinishHydration?.(() => setHasHydrated(true));
+    if (useAuthStore.persist?.hasHydrated?.()) setHasHydrated(true);
+    return () => (typeof unsub === 'function' ? unsub() : undefined);
+  }, [hasHydrated]);
 
-  if (isLoading) {
+  useEffect(() => {
+    if (hasHydrated) checkAuth();
+  }, [hasHydrated, checkAuth]);
+
+  if (!hasHydrated || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
