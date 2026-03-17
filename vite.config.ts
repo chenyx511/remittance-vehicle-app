@@ -3,13 +3,26 @@ import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
 import { inspectAttr } from 'kimi-plugin-inspect-react';
 
+const basePath = process.env.VITE_BASE_PATH || '';
+
+// 部署到子路径时注入 <base>，使 manifest、图标等相对路径在任意子路由刷新时都能正确解析
+function baseTagPlugin() {
+  return {
+    name: 'html-base-tag',
+    transformIndexHtml(html: string) {
+      if (!basePath) return html;
+      return html.replace('<head>', `<head>\n    <base href="${basePath}">`);
+    },
+  };
+}
+
 // https://vite.dev/config/
-// 使用相对路径 base，保证在任意子路径（如 GitHub Pages）下脚本都能加载
-// 部署到子路径时设置 VITE_BASE_PATH 供路由 basename 使用（如 /remittance-vehicle-app）
+// 部署到 GitHub Pages 子路径时，必须用绝对 base，否则在 /remittances/2 等子路由刷新时资源 404。VITE_BASE_PATH 由 workflow 传入。
 export default defineConfig(({ mode }) => ({
-  base: './',
+  base: basePath || './',
   plugins: [
     mode === 'development' ? inspectAttr() : null,
+    baseTagPlugin(),
     react(),
   ].filter(Boolean),
   resolve: {

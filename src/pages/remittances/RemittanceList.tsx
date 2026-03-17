@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Plus, Search, Filter, Eye, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,8 +28,10 @@ import { useAuthStore } from '@/stores/authStore';
 import type { RemittanceRequest } from '@/types';
 
 export function RemittanceList() {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const dateLocale = i18n.language.startsWith('ja') ? 'ja-JP' : 'zh-CN';
   const [requests, setRequests] = useState<RemittanceRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -95,19 +98,22 @@ export function RemittanceList() {
   };
 
   const getStatusBadge = (status: string) => {
+    const key = `remittance.status.${status}`;
+    const label = t(key);
+    if (label === key) return <Badge variant="secondary">{status}</Badge>;
     switch (status) {
       case 'PENDING':
-        return <Badge variant="secondary">待审批</Badge>;
+        return <Badge variant="secondary">{label}</Badge>;
       case 'SUPERVISOR_APPROVED':
-        return <Badge className="bg-blue-500">上级已批准</Badge>;
+        return <Badge className="bg-blue-500">{label}</Badge>;
       case 'FINANCE_PROCESSING':
-        return <Badge variant="warning">财务处理中</Badge>;
+        return <Badge variant="warning">{label}</Badge>;
       case 'COMPLETED':
-        return <Badge variant="success">已完成</Badge>;
+        return <Badge variant="success">{label}</Badge>;
       case 'REJECTED':
-        return <Badge variant="destructive">已拒绝</Badge>;
+        return <Badge variant="destructive">{label}</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary">{label}</Badge>;
     }
   };
 
@@ -124,12 +130,12 @@ export function RemittanceList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">汇款申请</h1>
-          <p className="text-muted-foreground">管理汇款申请和审批流程</p>
+          <h1 className="text-2xl font-bold">{t('remittance.title')}</h1>
+          <p className="text-muted-foreground">{t('remittance.subtitle')}</p>
         </div>
         <Button onClick={() => navigate('/remittances/create')}>
           <Plus className="mr-2 h-4 w-4" />
-          新建申请
+          {t('remittance.create')}
         </Button>
       </div>
 
@@ -140,7 +146,7 @@ export function RemittanceList() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="搜索申请编号、契约编号或收款方..."
+                placeholder={t('remittance.searchPlaceholder')}
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -149,20 +155,20 @@ export function RemittanceList() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-40">
-<SelectValue placeholder="全部状态" />
+<SelectValue placeholder={t('common.allStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                <SelectItem value="all">全部状态</SelectItem>
-                <SelectItem value="PENDING">待审批</SelectItem>
-                <SelectItem value="SUPERVISOR_APPROVED">上级已批准</SelectItem>
-                <SelectItem value="FINANCE_PROCESSING">财务处理中</SelectItem>
-                <SelectItem value="COMPLETED">已完成</SelectItem>
-                <SelectItem value="REJECTED">已拒绝</SelectItem>
+                <SelectItem value="all">{t('common.allStatus')}</SelectItem>
+                <SelectItem value="PENDING">{t('remittance.status.PENDING')}</SelectItem>
+                <SelectItem value="SUPERVISOR_APPROVED">{t('remittance.status.SUPERVISOR_APPROVED')}</SelectItem>
+                <SelectItem value="FINANCE_PROCESSING">{t('remittance.status.FINANCE_PROCESSING')}</SelectItem>
+                <SelectItem value="COMPLETED">{t('remittance.status.COMPLETED')}</SelectItem>
+                <SelectItem value="REJECTED">{t('remittance.status.REJECTED')}</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={handleSearch}>
               <Filter className="mr-2 h-4 w-4" />
-              筛选
+              {t('remittance.filter')}
             </Button>
           </div>
         </CardContent>
@@ -171,7 +177,7 @@ export function RemittanceList() {
       {/* List */}
       <Card>
         <CardHeader>
-          <CardTitle>申请列表</CardTitle>
+          <CardTitle>{t('remittance.list')}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -181,7 +187,7 @@ export function RemittanceList() {
               ))}
             </div>
           ) : requests.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">暂无汇款申请</div>
+            <div className="text-center py-12 text-muted-foreground">{t('remittance.noRemittances')}</div>
           ) : (
             <div className="space-y-4">
               {requests.map((request) => (
@@ -195,11 +201,11 @@ export function RemittanceList() {
                       {getStatusBadge(request.status)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      契约: {request.contractNo || '-'} · 收款: {request.recipientName}
+                      {t('remittance.contractShort')}: {request.contractNo || '-'} · {t('remittance.recipientShortLabel')}: {request.recipientName}
                     </div>
                     <div className="text-sm">
-                      申请人: {request.applicant?.username} · 申请时间:{' '}
-                      {new Date(request.createdAt).toLocaleString('zh-CN')}
+                      {t('remittance.applicant')}: {request.applicant?.username} · {t('remittance.applicationTime')}:{' '}
+                      {new Date(request.createdAt).toLocaleString(dateLocale)}
                     </div>
                   </div>
                   <div className="flex items-center gap-4 mt-4 sm:mt-0">
@@ -243,7 +249,7 @@ export function RemittanceList() {
                       )}
                       {canComplete(request) && (
                         <Button size="sm" onClick={() => navigate(`/remittances/${request.id}`)}>
-                          处理
+                          {t('remittance.actions.process')}
                         </Button>
                       )}
                     </div>
@@ -259,16 +265,14 @@ export function RemittanceList() {
       <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>审批通过</DialogTitle>
-            <DialogDescription>
-              确认通过 {selectedRequest?.requestNo} 的汇款申请？
-            </DialogDescription>
+            <DialogTitle>{t('remittance.approveDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('remittance.messages.confirmApprove')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">审批意见（可选）</label>
+              <label className="text-sm font-medium">{t('remittance.opinionLabel')}（{t('common.optional')}）</label>
               <Textarea
-                placeholder="请输入审批意见..."
+                placeholder={t('remittance.approveOpinionPlaceholder')}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
@@ -276,10 +280,10 @@ export function RemittanceList() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>
-              取消
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleApprove} disabled={isSubmitting}>
-              {isSubmitting ? '处理中...' : '确认通过'}
+              {isSubmitting ? t('remittance.processing') : t('remittance.confirmApproveButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -289,16 +293,14 @@ export function RemittanceList() {
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>审批拒绝</DialogTitle>
-            <DialogDescription>
-              确认拒绝 {selectedRequest?.requestNo} 的汇款申请？
-            </DialogDescription>
+            <DialogTitle>{t('remittance.rejectDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('remittance.messages.confirmReject')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">拒绝原因</label>
+              <label className="text-sm font-medium">{t('remittance.messages.enterRejectReason')}</label>
               <Textarea
-                placeholder="请输入拒绝原因..."
+                placeholder={t('remittance.rejectReasonPlaceholder')}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
@@ -306,10 +308,10 @@ export function RemittanceList() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>
-              取消
+              {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleReject} disabled={isSubmitting}>
-              {isSubmitting ? '处理中...' : '确认拒绝'}
+              {isSubmitting ? t('remittance.processing') : t('remittance.confirmRejectButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

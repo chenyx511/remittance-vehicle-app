@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,9 +24,11 @@ import { useAuthStore } from '@/stores/authStore';
 import type { RemittanceRequest } from '@/types';
 
 export function RemittanceDetail() {
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const dateLocale = i18n.language.startsWith('ja') ? 'ja-JP' : 'zh-CN';
   const [request, setRequest] = useState<RemittanceRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +58,7 @@ export function RemittanceDetail() {
     } catch (error: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (error as any)?.message as string | undefined;
-      setError(message || '获取申请详情失败');
+      setError(message || t('remittance.fetchDetailFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -72,7 +75,7 @@ export function RemittanceDetail() {
     } catch (error: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (error as any)?.message as string | undefined;
-      setError(message || '审批失败');
+      setError(message || t('errors.generic'));
     } finally {
       setIsSubmitting(false);
     }
@@ -89,7 +92,7 @@ export function RemittanceDetail() {
     } catch (error: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (error as any)?.message as string | undefined;
-      setError(message || '审批失败');
+      setError(message || t('errors.generic'));
     } finally {
       setIsSubmitting(false);
     }
@@ -109,26 +112,29 @@ export function RemittanceDetail() {
     } catch (error: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (error as any)?.message as string | undefined;
-      setError(message || '操作失败');
+      setError(message || t('errors.generic'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const getStatusBadge = (status: string) => {
+    const key = `remittance.status.${status}`;
+    const label = t(key);
+    if (label === key) return <Badge variant="secondary">{status}</Badge>;
     switch (status) {
       case 'PENDING':
-        return <Badge variant="secondary">待审批</Badge>;
+        return <Badge variant="secondary">{label}</Badge>;
       case 'SUPERVISOR_APPROVED':
-        return <Badge className="bg-blue-500">上级已批准</Badge>;
+        return <Badge className="bg-blue-500">{label}</Badge>;
       case 'FINANCE_PROCESSING':
-        return <Badge variant="warning">财务处理中</Badge>;
+        return <Badge variant="warning">{label}</Badge>;
       case 'COMPLETED':
-        return <Badge variant="success">已完成</Badge>;
+        return <Badge variant="success">{label}</Badge>;
       case 'REJECTED':
-        return <Badge variant="destructive">已拒绝</Badge>;
+        return <Badge variant="destructive">{label}</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary">{label}</Badge>;
     }
   };
 
@@ -154,10 +160,10 @@ export function RemittanceDetail() {
       <div className="space-y-6">
         <Button variant="ghost" onClick={() => navigate('/remittances')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          返回列表
+          {t('remittance.backToList')}
         </Button>
         <Alert variant="destructive">
-          <AlertDescription>{error || '申请不存在'}</AlertDescription>
+          <AlertDescription>{error || t('remittance.notFound')}</AlertDescription>
         </Alert>
       </div>
     );
@@ -177,7 +183,7 @@ export function RemittanceDetail() {
               {getStatusBadge(request.status)}
             </div>
             <p className="text-muted-foreground">
-              申请时间: {new Date(request.createdAt).toLocaleString('zh-CN')}
+              {t('remittance.applicationTime')}: {new Date(request.createdAt).toLocaleString(dateLocale)}
             </p>
           </div>
         </div>
@@ -190,18 +196,18 @@ export function RemittanceDetail() {
                 onClick={() => setIsRejectDialogOpen(true)}
               >
                 <XCircle className="mr-2 h-4 w-4" />
-                拒绝
+                {t('remittance.actions.reject')}
               </Button>
               <Button onClick={() => setIsApproveDialogOpen(true)}>
                 <CheckCircle className="mr-2 h-4 w-4" />
-                通过
+                {t('remittance.actions.approve')}
               </Button>
             </>
           )}
           {canComplete() && (
             <Button onClick={() => setIsCompleteDialogOpen(true)}>
               <CheckCircle className="mr-2 h-4 w-4" />
-              确认汇款
+              {t('remittance.confirmRemittance')}
             </Button>
           )}
         </div>
@@ -210,37 +216,37 @@ export function RemittanceDetail() {
       {/* Request Info */}
       <Card>
         <CardHeader>
-          <CardTitle>申请信息</CardTitle>
+          <CardTitle>{t('remittance.applicationInfo')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <Label className="text-muted-foreground">申请人</Label>
+              <Label className="text-muted-foreground">{t('remittance.applicant')}</Label>
               <p className="font-medium">{request.applicant?.username}</p>
               <p className="text-sm text-muted-foreground">{request.applicant?.department}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground">契约编号</Label>
+              <Label className="text-muted-foreground">{t('remittance.contractNo')}</Label>
               <p className="font-medium">{request.contractNo || '-'}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground">汇款金额</Label>
+              <Label className="text-muted-foreground">{t('common.amount')}</Label>
               <p className="text-2xl font-bold text-primary">¥{request.amount.toLocaleString()}</p>
               <p className="text-sm text-muted-foreground">{request.currency}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground">收款方</Label>
+              <Label className="text-muted-foreground">{t('remittance.recipientShort')}</Label>
               <p className="font-medium">{request.recipientName}</p>
             </div>
             {request.recipientAccount && (
               <div>
-                <Label className="text-muted-foreground">收款账号</Label>
+                <Label className="text-muted-foreground">{t('remittance.recipientAccount')}</Label>
                 <p className="font-medium">{request.recipientAccount}</p>
               </div>
             )}
             {request.recipientBank && (
               <div>
-                <Label className="text-muted-foreground">收款银行</Label>
+                <Label className="text-muted-foreground">{t('remittance.recipientBank')}</Label>
                 <p className="font-medium">{request.recipientBank}</p>
               </div>
             )}
@@ -252,7 +258,7 @@ export function RemittanceDetail() {
       {request.settlementDetailUrl && (
         <Card>
           <CardHeader>
-            <CardTitle>决算明细</CardTitle>
+            <CardTitle>{t('remittance.settlementDetail')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="border rounded-lg overflow-hidden max-w-md">
@@ -269,7 +275,7 @@ export function RemittanceDetail() {
       {/* Approval Timeline */}
       <Card>
         <CardHeader>
-          <CardTitle>审批流程</CardTitle>
+          <CardTitle>{t('remittance.approvalFlow')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -279,10 +285,10 @@ export function RemittanceDetail() {
                 <span className="text-primary-foreground text-sm">1</span>
               </div>
               <div className="flex-1">
-                <p className="font-medium">提交申请</p>
+                <p className="font-medium">{t('remittance.submitApplication')}</p>
                 <p className="text-sm text-muted-foreground">
                   {request.applicant?.username} ·{' '}
-                  {new Date(request.createdAt).toLocaleString('zh-CN')}
+                  {new Date(request.createdAt).toLocaleString(dateLocale)}
                 </p>
               </div>
             </div>
@@ -307,21 +313,21 @@ export function RemittanceDetail() {
                 </span>
               </div>
               <div className="flex-1">
-                <p className="font-medium">上级审批</p>
+                <p className="font-medium">{t('remittance.supervisorApproval')}</p>
                 {request.supervisor ? (
                   <>
                     <p className="text-sm">
                       {request.supervisor.username} ·{' '}
-                      {new Date(request.supervisorApprovedAt!).toLocaleString('zh-CN')}
+                      {new Date(request.supervisorApprovedAt!).toLocaleString(dateLocale)}
                     </p>
                     {request.supervisorComment && (
                       <p className="text-sm text-muted-foreground mt-1">
-                        意见: {request.supervisorComment}
+                        {t('remittance.opinionLabel')}: {request.supervisorComment}
                       </p>
                     )}
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">等待审批...</p>
+                  <p className="text-sm text-muted-foreground">{t('remittance.waitingApproval')}</p>
                 )}
               </div>
             </div>
@@ -346,21 +352,21 @@ export function RemittanceDetail() {
                 </span>
               </div>
               <div className="flex-1">
-                <p className="font-medium">财务汇款</p>
+                <p className="font-medium">{t('remittance.financeRemittance')}</p>
                 {request.finance ? (
                   <>
                     <p className="text-sm">
                       {request.finance.username} ·{' '}
-                      {new Date(request.completedAt!).toLocaleString('zh-CN')}
+                      {new Date(request.completedAt!).toLocaleString(dateLocale)}
                     </p>
                     {request.financeComment && (
                       <p className="text-sm text-muted-foreground mt-1">
-                        备注: {request.financeComment}
+                        {t('remittance.remarksLabel')}: {request.financeComment}
                       </p>
                     )}
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">等待处理...</p>
+                  <p className="text-sm text-muted-foreground">{t('remittance.waitingProcess')}</p>
                 )}
               </div>
             </div>
@@ -372,7 +378,7 @@ export function RemittanceDetail() {
       {request.remittanceProofUrl && (
         <Card>
           <CardHeader>
-            <CardTitle>汇款凭证</CardTitle>
+            <CardTitle>{t('remittance.remittanceProof')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="border rounded-lg overflow-hidden max-w-md">
@@ -384,7 +390,7 @@ export function RemittanceDetail() {
             </div>
             {request.remittanceDate && (
               <p className="text-sm text-muted-foreground mt-2">
-                汇款日期: {request.remittanceDate}
+                {t('remittance.remittanceDate')}: {request.remittanceDate}
               </p>
             )}
           </CardContent>
@@ -395,23 +401,23 @@ export function RemittanceDetail() {
       <Dialog open={isApproveDialogOpen} onOpenChange={setIsApproveDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>审批通过</DialogTitle>
-            <DialogDescription>确认通过此汇款申请？</DialogDescription>
+            <DialogTitle>{t('remittance.approveDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('remittance.messages.confirmApprove')}</DialogDescription>
           </DialogHeader>
           <div>
-            <Label>审批意见（可选）</Label>
+            <Label>{t('remittance.opinionLabel')}（{t('common.optional')}）</Label>
             <Textarea
-              placeholder="请输入审批意见..."
+              placeholder={t('remittance.approveOpinionPlaceholder')}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
             />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsApproveDialogOpen(false)}>
-              取消
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleApprove} disabled={isSubmitting}>
-              {isSubmitting ? '处理中...' : '确认通过'}
+              {isSubmitting ? t('remittance.processing') : t('remittance.confirmApproveButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -421,23 +427,23 @@ export function RemittanceDetail() {
       <Dialog open={isRejectDialogOpen} onOpenChange={setIsRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>审批拒绝</DialogTitle>
-            <DialogDescription>确认拒绝此汇款申请？</DialogDescription>
+            <DialogTitle>{t('remittance.rejectDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('remittance.messages.confirmReject')}</DialogDescription>
           </DialogHeader>
           <div>
-            <Label>拒绝原因</Label>
+            <Label>{t('remittance.messages.enterRejectReason')}</Label>
             <Textarea
-              placeholder="请输入拒绝原因..."
+              placeholder={t('remittance.rejectReasonPlaceholder')}
               value={comment}
               onChange={(e) => setComment(e.target.value)}
             />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsRejectDialogOpen(false)}>
-              取消
+              {t('common.cancel')}
             </Button>
             <Button variant="destructive" onClick={handleReject} disabled={isSubmitting}>
-              {isSubmitting ? '处理中...' : '确认拒绝'}
+              {isSubmitting ? t('remittance.processing') : t('remittance.confirmRejectButton')}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -447,12 +453,12 @@ export function RemittanceDetail() {
       <Dialog open={isCompleteDialogOpen} onOpenChange={setIsCompleteDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>确认汇款完成</DialogTitle>
-            <DialogDescription>请填写汇款信息</DialogDescription>
+            <DialogTitle>{t('remittance.completeDialogTitle')}</DialogTitle>
+            <DialogDescription>{t('remittance.completeDialogDescription')}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label>汇款日期 *</Label>
+              <Label>{t('remittance.remittanceDateRequired')}</Label>
               <Input
                 type="date"
                 value={remittanceDate}
@@ -460,17 +466,17 @@ export function RemittanceDetail() {
               />
             </div>
             <div>
-              <Label>汇款凭证截图 URL</Label>
+              <Label>{t('remittance.voucherUrlLabel')}</Label>
               <Input
-                placeholder="请输入凭证图片URL"
+                placeholder={t('remittance.voucherUrlPlaceholder')}
                 value={proofUrl}
                 onChange={(e) => setProofUrl(e.target.value)}
               />
             </div>
             <div>
-              <Label>备注</Label>
+              <Label>{t('remittance.remarksLabel')}</Label>
               <Textarea
-                placeholder="请输入备注..."
+                placeholder={t('remittance.remarksPlaceholder')}
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
               />
@@ -478,10 +484,10 @@ export function RemittanceDetail() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsCompleteDialogOpen(false)}>
-              取消
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleComplete} disabled={isSubmitting || !remittanceDate}>
-              {isSubmitting ? '处理中...' : '确认完成'}
+              {isSubmitting ? t('remittance.processing') : t('remittance.confirmCompleteButton')}
             </Button>
           </DialogFooter>
         </DialogContent>

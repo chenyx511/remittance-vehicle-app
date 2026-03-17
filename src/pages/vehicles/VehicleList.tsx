@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Plus, Search, Filter, Eye, CheckCircle, XCircle, Play, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -28,8 +29,10 @@ import { useAuthStore } from '@/stores/authStore';
 import type { VehicleRequest } from '@/types';
 
 export function VehicleList() {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const dateLocale = i18n.language.startsWith('ja') ? 'ja-JP' : 'zh-CN';
   const [requests, setRequests] = useState<VehicleRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -96,19 +99,22 @@ export function VehicleList() {
   };
 
   const getStatusBadge = (status: string) => {
+    const key = `vehicle.status.${status}`;
+    const label = t(key);
+    if (label === key) return <Badge variant="secondary">{status}</Badge>;
     switch (status) {
       case 'PENDING':
-        return <Badge variant="secondary">待审批</Badge>;
+        return <Badge variant="secondary">{label}</Badge>;
       case 'APPROVED':
-        return <Badge className="bg-blue-500">已批准</Badge>;
+        return <Badge className="bg-blue-500">{label}</Badge>;
       case 'IN_USE':
-        return <Badge variant="warning">使用中</Badge>;
+        return <Badge variant="warning">{label}</Badge>;
       case 'COMPLETED':
-        return <Badge variant="success">已完成</Badge>;
+        return <Badge variant="success">{label}</Badge>;
       case 'REJECTED':
-        return <Badge variant="destructive">已拒绝</Badge>;
+        return <Badge variant="destructive">{label}</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary">{label}</Badge>;
     }
   };
 
@@ -139,16 +145,16 @@ export function VehicleList() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">用车申请</h1>
-          <p className="text-muted-foreground">管理用车申请和车辆调度</p>
+          <h1 className="text-2xl font-bold">{t('vehicle.title')}</h1>
+          <p className="text-muted-foreground">{t('vehicle.subtitle')}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => navigate('/vehicles/schedule')}>
-            车辆日程
+            {t('vehicle.schedule')}
           </Button>
           <Button onClick={() => navigate('/vehicles/apply')}>
             <Plus className="mr-2 h-4 w-4" />
-            申请用车
+            {t('vehicle.apply')}
           </Button>
         </div>
       </div>
@@ -160,7 +166,7 @@ export function VehicleList() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="搜索申请编号或目的地..."
+                placeholder={t('vehicle.requestNo') + ' / ' + t('vehicle.destination')}
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -169,20 +175,20 @@ export function VehicleList() {
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-full sm:w-40">
-<SelectValue placeholder="全部状态" />
+<SelectValue placeholder={t('common.allStatus')} />
                 </SelectTrigger>
                 <SelectContent>
-                <SelectItem value="all">全部状态</SelectItem>
-                <SelectItem value="PENDING">待审批</SelectItem>
-                <SelectItem value="APPROVED">已批准</SelectItem>
-                <SelectItem value="IN_USE">使用中</SelectItem>
-                <SelectItem value="COMPLETED">已完成</SelectItem>
-                <SelectItem value="REJECTED">已拒绝</SelectItem>
+                <SelectItem value="all">{t('common.allStatus')}</SelectItem>
+                <SelectItem value="PENDING">{t('vehicle.status.PENDING')}</SelectItem>
+                <SelectItem value="APPROVED">{t('vehicle.status.APPROVED')}</SelectItem>
+                <SelectItem value="IN_USE">{t('vehicle.status.IN_USE')}</SelectItem>
+                <SelectItem value="COMPLETED">{t('vehicle.status.COMPLETED')}</SelectItem>
+                <SelectItem value="REJECTED">{t('vehicle.status.REJECTED')}</SelectItem>
               </SelectContent>
             </Select>
             <Button variant="outline" onClick={handleSearch}>
               <Filter className="mr-2 h-4 w-4" />
-              筛选
+              {t('remittance.filter')}
             </Button>
           </div>
         </CardContent>
@@ -191,7 +197,7 @@ export function VehicleList() {
       {/* List */}
       <Card>
         <CardHeader>
-          <CardTitle>申请列表</CardTitle>
+          <CardTitle>{t('vehicle.list')}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -201,7 +207,7 @@ export function VehicleList() {
               ))}
             </div>
           ) : requests.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">暂无用车申请</div>
+            <div className="text-center py-12 text-muted-foreground">{t('vehicle.noVehicleRequests')}</div>
           ) : (
             <div className="space-y-4">
               {requests.map((request) => (
@@ -215,22 +221,22 @@ export function VehicleList() {
                       {getStatusBadge(request.status)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      车辆: {request.vehicle?.plateNumber} ({request.vehicle?.brand}{' '}
+                      {t('vehicle.vehicleInfo')}: {request.vehicle?.plateNumber} ({request.vehicle?.brand}{' '}
                       {request.vehicle?.model})
                     </div>
                     <div className="text-sm">
-                      用途: {request.purpose} · 目的地: {request.destination || '-'}
+                      {t('vehicle.purpose')}: {request.purpose} · {t('vehicle.destination')}: {request.destination || '-'}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      时间:{' '}
-                      {new Date(request.startTime).toLocaleString('zh-CN', {
+                      {t('common.time')}:{' '}
+                      {new Date(request.startTime).toLocaleString(dateLocale, {
                         month: 'short',
                         day: 'numeric',
                         hour: '2-digit',
                         minute: '2-digit',
                       })}{' '}
                       -
-                      {new Date(request.endTime).toLocaleString('zh-CN', {
+                      {new Date(request.endTime).toLocaleString(dateLocale, {
                         hour: '2-digit',
                         minute: '2-digit',
                       })}
@@ -267,7 +273,7 @@ export function VehicleList() {
                     {canStart(request) && (
                       <Button size="sm" onClick={() => openDialog('start', request)}>
                         <Play className="mr-1 h-3 w-3" />
-                        开始
+                        {t('vehicle.actions.start')}
                       </Button>
                     )}
                     {canComplete(request) && (
@@ -277,7 +283,7 @@ export function VehicleList() {
                         onClick={() => openDialog('complete', request)}
                       >
                         <Check className="mr-1 h-3 w-3" />
-                        完成
+                        {t('vehicle.actions.complete')}
                       </Button>
                     )}
                   </div>
@@ -293,20 +299,20 @@ export function VehicleList() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {dialogType === 'approve' && '审批通过'}
-              {dialogType === 'reject' && '审批拒绝'}
-              {dialogType === 'start' && '开始用车'}
-              {dialogType === 'complete' && '完成用车'}
+              {dialogType === 'approve' && t('vehicle.actions.approve')}
+              {dialogType === 'reject' && t('vehicle.actions.reject')}
+              {dialogType === 'start' && t('vehicle.actions.start')}
+              {dialogType === 'complete' && t('vehicle.actions.complete')}
             </DialogTitle>
             <DialogDescription>{selectedRequest?.requestNo}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {(dialogType === 'start' || dialogType === 'complete') && (
               <div>
-                <Label>{dialogType === 'start' ? '起始里程' : '结束里程'}</Label>
+                <Label>{dialogType === 'start' ? t('vehicle.mileageStart') : t('vehicle.mileageEnd')}</Label>
                 <Input
                   type="number"
-                  placeholder="请输入里程数"
+                  placeholder={t('vehicle.mileagePlaceholder')}
                   value={mileage}
                   onChange={(e) => setMileage(e.target.value)}
                 />
@@ -314,9 +320,9 @@ export function VehicleList() {
             )}
             {dialogType !== 'start' && (
               <div>
-                <Label>{dialogType === 'reject' ? '拒绝原因' : '备注'}</Label>
+                <Label>{dialogType === 'reject' ? t('remittance.messages.enterRejectReason') : t('remittance.remarksLabel')}</Label>
                 <Textarea
-                  placeholder={dialogType === 'reject' ? '请输入拒绝原因...' : '请输入备注信息...'}
+                  placeholder={dialogType === 'reject' ? t('remittance.rejectReasonPlaceholder') : t('remittance.remarksPlaceholder')}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                 />
@@ -325,14 +331,14 @@ export function VehicleList() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogType(null)}>
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleAction}
               disabled={isSubmitting}
               variant={dialogType === 'reject' ? 'destructive' : 'default'}
             >
-              {isSubmitting ? '处理中...' : '确认'}
+              {isSubmitting ? t('remittance.processing') : t('vehicle.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>

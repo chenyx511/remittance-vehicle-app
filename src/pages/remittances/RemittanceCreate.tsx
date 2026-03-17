@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Upload, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import { remittanceApi, userApi } from '@/services/api';
 import type { User } from '@/types';
 
 export function RemittanceCreate() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [supervisors, setSupervisors] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -65,7 +67,7 @@ export function RemittanceCreate() {
       setFormData((prev) => ({ ...prev, settlementDetailUrl: response.data.url }));
     } catch {
       console.error('Failed to upload file');
-      setError('上传失败，请重试');
+      setError(t('remittance.uploadFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -77,15 +79,15 @@ export function RemittanceCreate() {
 
     // Validation
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      setError('请输入有效的汇款金额');
+      setError(t('remittance.invalidAmount'));
       return;
     }
     if (!formData.recipientName) {
-      setError('请输入收款方名称');
+      setError(t('remittance.recipientNamePlaceholder'));
       return;
     }
     if (!formData.supervisorId) {
-      setError('请选择审批上级');
+      setError(t('remittance.selectSupervisorRequired'));
       return;
     }
 
@@ -105,7 +107,7 @@ export function RemittanceCreate() {
     } catch (error: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (error as any)?.message as string | undefined;
-      setError(message || '提交失败，请重试');
+      setError(message || t('remittance.submitFailed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -119,8 +121,8 @@ export function RemittanceCreate() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold">新建汇款申请</h1>
-          <p className="text-muted-foreground">填写汇款申请信息</p>
+          <h1 className="text-2xl font-bold">{t('remittance.create')}</h1>
+          <p className="text-muted-foreground">{t('remittance.createSubtitle')}</p>
         </div>
       </div>
 
@@ -134,14 +136,14 @@ export function RemittanceCreate() {
         {/* Contract Info */}
         <Card>
           <CardHeader>
-            <CardTitle>契约信息</CardTitle>
+            <CardTitle>{t('remittance.contractInfo')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="contractNo">契约编号</Label>
+              <Label htmlFor="contractNo">{t('remittance.contractNo')}</Label>
               <Input
                 id="contractNo"
-                placeholder="请输入契约编号"
+                placeholder={t('remittance.contractNoPlaceholder')}
                 value={formData.contractNo}
                 onChange={(e) => handleInputChange('contractNo', e.target.value)}
               />
@@ -152,23 +154,23 @@ export function RemittanceCreate() {
         {/* Amount Info */}
         <Card>
           <CardHeader>
-            <CardTitle>汇款金额</CardTitle>
+            <CardTitle>{t('common.amount')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="amount">金额 *</Label>
+                <Label htmlFor="amount">{t('remittance.amountLabel')}</Label>
                 <Input
                   id="amount"
                   type="number"
-                  placeholder="请输入金额"
+                  placeholder={t('remittance.amountPlaceholder')}
                   value={formData.amount}
                   onChange={(e) => handleInputChange('amount', e.target.value)}
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="currency">币种</Label>
+                <Label htmlFor="currency">{t('common.currency')}</Label>
                 <Select
                   value={formData.currency}
                   onValueChange={(value) => handleInputChange('currency', value)}
@@ -177,10 +179,10 @@ export function RemittanceCreate() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="CNY">人民币 (CNY)</SelectItem>
-                    <SelectItem value="USD">美元 (USD)</SelectItem>
-                    <SelectItem value="EUR">欧元 (EUR)</SelectItem>
-                    <SelectItem value="JPY">日元 (JPY)</SelectItem>
+                    <SelectItem value="CNY">CNY</SelectItem>
+                    <SelectItem value="USD">USD</SelectItem>
+                    <SelectItem value="EUR">EUR</SelectItem>
+                    <SelectItem value="JPY">JPY</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -191,33 +193,33 @@ export function RemittanceCreate() {
         {/* Recipient Info */}
         <Card>
           <CardHeader>
-            <CardTitle>收款方信息</CardTitle>
+            <CardTitle>{t('remittance.recipientInfo')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="recipientName">收款方名称 *</Label>
+              <Label htmlFor="recipientName">{t('remittance.recipientName')} *</Label>
               <Input
                 id="recipientName"
-                placeholder="请输入收款方名称"
+                placeholder={t('remittance.recipientNamePlaceholder')}
                 value={formData.recipientName}
                 onChange={(e) => handleInputChange('recipientName', e.target.value)}
                 required
               />
             </div>
             <div>
-              <Label htmlFor="recipientAccount">收款账号</Label>
+              <Label htmlFor="recipientAccount">{t('remittance.recipientAccount')}</Label>
               <Input
                 id="recipientAccount"
-                placeholder="请输入收款账号"
+                placeholder={t('remittance.recipientAccountPlaceholder')}
                 value={formData.recipientAccount}
                 onChange={(e) => handleInputChange('recipientAccount', e.target.value)}
               />
             </div>
             <div>
-              <Label htmlFor="recipientBank">收款银行</Label>
+              <Label htmlFor="recipientBank">{t('remittance.recipientBank')}</Label>
               <Input
                 id="recipientBank"
-                placeholder="请输入收款银行"
+                placeholder={t('remittance.recipientBankPlaceholder')}
                 value={formData.recipientBank}
                 onChange={(e) => handleInputChange('recipientBank', e.target.value)}
               />
@@ -228,7 +230,7 @@ export function RemittanceCreate() {
         {/* Settlement Detail */}
         <Card>
           <CardHeader>
-            <CardTitle>决算明细</CardTitle>
+            <CardTitle>{t('remittance.settlementDetail')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="border-2 border-dashed border-muted rounded-lg p-6">
@@ -254,8 +256,8 @@ export function RemittanceCreate() {
               ) : (
                 <label className="flex flex-col items-center cursor-pointer">
                   <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-                  <span className="text-muted-foreground">点击上传决算明细照片</span>
-                  <span className="text-sm text-muted-foreground mt-1">支持 JPG、PNG 格式</span>
+                  <span className="text-muted-foreground">{t('remittance.uploadSettlement')}</span>
+                  <span className="text-sm text-muted-foreground mt-1">JPG, PNG</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -277,17 +279,17 @@ export function RemittanceCreate() {
         {/* Approver */}
         <Card>
           <CardHeader>
-            <CardTitle>审批人</CardTitle>
+            <CardTitle>{t('remittance.approverTitle')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="supervisor">选择上级 *</Label>
+              <Label htmlFor="supervisor">{t('remittance.selectSupervisor')} *</Label>
               <Select
                 value={formData.supervisorId}
                 onValueChange={(value) => handleInputChange('supervisorId', value)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="请选择审批上级" />
+                  <SelectValue placeholder={t('remittance.selectSupervisor')} />
                 </SelectTrigger>
                 <SelectContent>
                   {supervisors.map((supervisor) => (
@@ -299,10 +301,10 @@ export function RemittanceCreate() {
               </Select>
             </div>
             <div>
-              <Label htmlFor="remark">备注</Label>
+              <Label htmlFor="remark">{t('remittance.remarksLabel')}</Label>
               <Textarea
                 id="remark"
-                placeholder="请输入备注信息（可选）"
+                placeholder={t('remittance.remarkPlaceholder')}
                 value={formData.remark}
                 onChange={(e) => handleInputChange('remark', e.target.value)}
               />
@@ -313,16 +315,16 @@ export function RemittanceCreate() {
         {/* Actions */}
         <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={() => navigate('/remittances')}>
-            取消
+            {t('common.cancel')}
           </Button>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                提交中...
+                {t('remittance.submitting')}
               </>
             ) : (
-              '提交申请'
+              t('common.submit')
             )}
           </Button>
         </div>

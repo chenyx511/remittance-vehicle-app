@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, CheckCircle, XCircle, Play, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,9 +24,11 @@ import { useAuthStore } from '@/stores/authStore';
 import type { VehicleRequest } from '@/types';
 
 export function VehicleDetail() {
+  const { t, i18n } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const dateLocale = i18n.language.startsWith('ja') ? 'ja-JP' : 'zh-CN';
   const [request, setRequest] = useState<VehicleRequest | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +57,7 @@ export function VehicleDetail() {
     } catch (error: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (error as any)?.message as string | undefined;
-      setError(message || '获取申请详情失败');
+      setError(message || t('vehicle.fetchDetailFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -86,26 +89,29 @@ export function VehicleDetail() {
     } catch (error: unknown) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const message = (error as any)?.message as string | undefined;
-      setError(message || '操作失败');
+      setError(message || t('errors.generic'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const getStatusBadge = (status: string) => {
+    const key = `vehicle.status.${status}`;
+    const label = t(key);
+    if (label === key) return <Badge variant="secondary">{status}</Badge>;
     switch (status) {
       case 'PENDING':
-        return <Badge variant="secondary">待审批</Badge>;
+        return <Badge variant="secondary">{label}</Badge>;
       case 'APPROVED':
-        return <Badge className="bg-blue-500">已批准</Badge>;
+        return <Badge className="bg-blue-500">{label}</Badge>;
       case 'IN_USE':
-        return <Badge variant="warning">使用中</Badge>;
+        return <Badge variant="warning">{label}</Badge>;
       case 'COMPLETED':
-        return <Badge variant="success">已完成</Badge>;
+        return <Badge variant="success">{label}</Badge>;
       case 'REJECTED':
-        return <Badge variant="destructive">已拒绝</Badge>;
+        return <Badge variant="destructive">{label}</Badge>;
       default:
-        return <Badge variant="secondary">{status}</Badge>;
+        return <Badge variant="secondary">{label}</Badge>;
     }
   };
 
@@ -135,10 +141,10 @@ export function VehicleDetail() {
       <div className="space-y-6">
         <Button variant="ghost" onClick={() => navigate('/vehicles')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          返回列表
+          {t('vehicle.backToList')}
         </Button>
         <Alert variant="destructive">
-          <AlertDescription>{error || '申请不存在'}</AlertDescription>
+          <AlertDescription>{error || t('vehicle.notFound')}</AlertDescription>
         </Alert>
       </div>
     );
@@ -158,7 +164,7 @@ export function VehicleDetail() {
               {getStatusBadge(request.status)}
             </div>
             <p className="text-muted-foreground">
-              申请时间: {new Date(request.createdAt).toLocaleString('zh-CN')}
+              {t('vehicle.applicationTime')}: {new Date(request.createdAt).toLocaleString(dateLocale)}
             </p>
           </div>
         </div>
@@ -171,24 +177,24 @@ export function VehicleDetail() {
                 onClick={() => setDialogType('reject')}
               >
                 <XCircle className="mr-2 h-4 w-4" />
-                拒绝
+                {t('vehicle.actions.reject')}
               </Button>
               <Button onClick={() => setDialogType('approve')}>
                 <CheckCircle className="mr-2 h-4 w-4" />
-                通过
+                {t('vehicle.actions.approve')}
               </Button>
             </>
           )}
           {canStart() && (
             <Button onClick={() => setDialogType('start')}>
               <Play className="mr-2 h-4 w-4" />
-              开始用车
+              {t('vehicle.actions.start')}
             </Button>
           )}
           {canComplete() && (
             <Button onClick={() => setDialogType('complete')}>
               <Check className="mr-2 h-4 w-4" />
-              完成用车
+              {t('vehicle.actions.complete')}
             </Button>
           )}
         </div>
@@ -197,38 +203,38 @@ export function VehicleDetail() {
       {/* Request Info */}
       <Card>
         <CardHeader>
-          <CardTitle>申请信息</CardTitle>
+          <CardTitle>{t('vehicle.applicationInfo')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div>
-              <Label className="text-muted-foreground">申请人</Label>
+              <Label className="text-muted-foreground">{t('vehicle.applicant')}</Label>
               <p className="font-medium">{request.applicant?.username}</p>
               <p className="text-sm text-muted-foreground">{request.applicant?.department}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground">车辆信息</Label>
+              <Label className="text-muted-foreground">{t('vehicle.vehicleInfo')}</Label>
               <p className="font-medium">{request.vehicle?.plateNumber}</p>
               <p className="text-sm text-muted-foreground">
                 {request.vehicle?.brand} {request.vehicle?.model} ({request.vehicle?.color})
               </p>
             </div>
             <div>
-              <Label className="text-muted-foreground">用车目的</Label>
+              <Label className="text-muted-foreground">{t('vehicle.purpose')}</Label>
               <p className="font-medium">{request.purpose}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground">目的地</Label>
+              <Label className="text-muted-foreground">{t('vehicle.destination')}</Label>
               <p className="font-medium">{request.destination || '-'}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground">预计时间</Label>
-              <p className="font-medium">{new Date(request.startTime).toLocaleString('zh-CN')} -</p>
-              <p className="font-medium">{new Date(request.endTime).toLocaleString('zh-CN')}</p>
+              <Label className="text-muted-foreground">{t('vehicle.expectedTime')}</Label>
+              <p className="font-medium">{new Date(request.startTime).toLocaleString(dateLocale)} -</p>
+              <p className="font-medium">{new Date(request.endTime).toLocaleString(dateLocale)}</p>
             </div>
             <div>
-              <Label className="text-muted-foreground">乘车人数</Label>
-              <p className="font-medium">{request.passengers}人</p>
+              <Label className="text-muted-foreground">{t('vehicle.passengersCount')}</Label>
+              <p className="font-medium">{request.passengers}</p>
             </div>
           </div>
         </CardContent>
@@ -237,7 +243,7 @@ export function VehicleDetail() {
       {/* Approval Timeline */}
       <Card>
         <CardHeader>
-          <CardTitle>审批流程</CardTitle>
+          <CardTitle>{t('remittance.approvalFlow')}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
@@ -247,10 +253,10 @@ export function VehicleDetail() {
                 <span className="text-primary-foreground text-sm">1</span>
               </div>
               <div className="flex-1">
-                <p className="font-medium">提交申请</p>
+                <p className="font-medium">{t('vehicle.submitApplication')}</p>
                 <p className="text-sm text-muted-foreground">
                   {request.applicant?.username} ·{' '}
-                  {new Date(request.createdAt).toLocaleString('zh-CN')}
+                  {new Date(request.createdAt).toLocaleString(dateLocale)}
                 </p>
               </div>
             </div>
@@ -275,21 +281,21 @@ export function VehicleDetail() {
                 </span>
               </div>
               <div className="flex-1">
-                <p className="font-medium">审批</p>
+                <p className="font-medium">{t('vehicle.approval')}</p>
                 {request.approver ? (
                   <>
                     <p className="text-sm">
                       {request.approver.username} ·{' '}
-                      {new Date(request.approvedAt!).toLocaleString('zh-CN')}
+                      {new Date(request.approvedAt!).toLocaleString(dateLocale)}
                     </p>
                     {request.approverComment && (
                       <p className="text-sm text-muted-foreground mt-1">
-                        意见: {request.approverComment}
+                        {t('remittance.opinionLabel')}: {request.approverComment}
                       </p>
                     )}
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">等待审批...</p>
+                  <p className="text-sm text-muted-foreground">{t('remittance.waitingApproval')}</p>
                 )}
               </div>
             </div>
@@ -316,28 +322,28 @@ export function VehicleDetail() {
                 </span>
               </div>
               <div className="flex-1">
-                <p className="font-medium">用车</p>
+                <p className="font-medium">{t('vehicle.useLabel')}</p>
                 {request.actualStartTime ? (
                   <>
                     <p className="text-sm">
-                      开始: {new Date(request.actualStartTime).toLocaleString('zh-CN')}
+                      {t('vehicle.startLabel')}: {new Date(request.actualStartTime).toLocaleString(dateLocale)}
                     </p>
-                    {request.mileageStart && (
+                    {request.mileageStart != null && (
                       <p className="text-sm text-muted-foreground">
-                        起始里程: {request.mileageStart} km
+                        {t('vehicle.mileageStart')}: {request.mileageStart} km
                       </p>
                     )}
                     {request.actualEndTime && (
                       <>
                         <p className="text-sm">
-                          结束: {new Date(request.actualEndTime).toLocaleString('zh-CN')}
+                          {t('vehicle.endLabel')}: {new Date(request.actualEndTime).toLocaleString(dateLocale)}
                         </p>
-                        {request.mileageEnd && (
+                        {request.mileageEnd != null && (
                           <p className="text-sm text-muted-foreground">
-                            结束里程: {request.mileageEnd} km
-                            {request.mileageStart && (
+                            {t('vehicle.mileageEnd')}: {request.mileageEnd} km
+                            {request.mileageStart != null && (
                               <span className="ml-2">
-                                (行驶: {request.mileageEnd - request.mileageStart} km)
+                                ({t('vehicle.mileageDriven')}: {request.mileageEnd - request.mileageStart} km)
                               </span>
                             )}
                           </p>
@@ -346,7 +352,7 @@ export function VehicleDetail() {
                     )}
                   </>
                 ) : (
-                  <p className="text-sm text-muted-foreground">等待开始...</p>
+                  <p className="text-sm text-muted-foreground">{t('vehicle.waitingStart')}</p>
                 )}
               </div>
             </div>
@@ -359,20 +365,20 @@ export function VehicleDetail() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {dialogType === 'approve' && '审批通过'}
-              {dialogType === 'reject' && '审批拒绝'}
-              {dialogType === 'start' && '开始用车'}
-              {dialogType === 'complete' && '完成用车'}
+              {dialogType === 'approve' && t('vehicle.actions.approve')}
+              {dialogType === 'reject' && t('vehicle.actions.reject')}
+              {dialogType === 'start' && t('vehicle.actions.start')}
+              {dialogType === 'complete' && t('vehicle.actions.complete')}
             </DialogTitle>
             <DialogDescription>{request.requestNo}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             {(dialogType === 'start' || dialogType === 'complete') && (
               <div>
-                <Label>{dialogType === 'start' ? '起始里程' : '结束里程'}</Label>
+                <Label>{dialogType === 'start' ? t('vehicle.mileageStart') : t('vehicle.mileageEnd')}</Label>
                 <Input
                   type="number"
-                  placeholder="请输入里程数"
+                  placeholder={t('vehicle.mileagePlaceholder')}
                   value={mileage}
                   onChange={(e) => setMileage(e.target.value)}
                 />
@@ -380,9 +386,9 @@ export function VehicleDetail() {
             )}
             {dialogType !== 'start' && (
               <div>
-                <Label>{dialogType === 'reject' ? '拒绝原因' : '备注'}</Label>
+                <Label>{dialogType === 'reject' ? t('remittance.messages.enterRejectReason') : t('remittance.remarksLabel')}</Label>
                 <Textarea
-                  placeholder={dialogType === 'reject' ? '请输入拒绝原因...' : '请输入备注信息...'}
+                  placeholder={dialogType === 'reject' ? t('remittance.rejectReasonPlaceholder') : t('remittance.remarksPlaceholder')}
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                 />
@@ -391,14 +397,14 @@ export function VehicleDetail() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogType(null)}>
-              取消
+              {t('common.cancel')}
             </Button>
             <Button
               onClick={handleAction}
               disabled={isSubmitting}
               variant={dialogType === 'reject' ? 'destructive' : 'default'}
             >
-              {isSubmitting ? '处理中...' : '确认'}
+              {isSubmitting ? t('remittance.processing') : t('vehicle.confirm')}
             </Button>
           </DialogFooter>
         </DialogContent>
