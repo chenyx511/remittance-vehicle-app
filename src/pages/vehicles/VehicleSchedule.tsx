@@ -179,7 +179,7 @@ export function VehicleSchedule() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5" />
-            {currentDate.getFullYear()}年{currentDate.getMonth() + 1}月
+            {currentDate.toLocaleDateString(dateLocale, { year: 'numeric', month: 'long' })}
           </CardTitle>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={prevMonth}>

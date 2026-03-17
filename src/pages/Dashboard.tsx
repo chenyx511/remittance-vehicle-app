@@ -23,6 +23,7 @@ interface RecentActivity {
   title: string;
   description: string;
   time: string;
+  createdAt: string;
   status: string;
 }
 
@@ -60,12 +61,17 @@ export function Dashboard() {
       const processingRemittances = remittances.filter(
         (r) => r.status === 'SUPERVISOR_APPROVED',
       ).length;
+      const isToday = (dateString: string) =>
+        new Date(dateString).toDateString() === new Date().toDateString();
+      const totalToday =
+        remittances.filter((r) => isToday(r.createdAt)).length +
+        vehicles.filter((v) => isToday(v.createdAt)).length;
 
       setStats({
         pendingRemittances,
         pendingVehicles,
         processingRemittances,
-        totalToday: remittances.length + vehicles.length,
+        totalToday,
       });
 
       // Generate recent activities
@@ -76,6 +82,7 @@ export function Dashboard() {
           title: `${t('remittance.title')} ${r.requestNo}`,
           description: `${r.applicant?.username} ${t('dashboard.submitted')} ¥${r.amount.toLocaleString()} ${t('remittance.title')}`,
           time: formatTimeAgo(r.createdAt),
+          createdAt: r.createdAt,
           status: r.status,
         })),
         ...vehicles.slice(0, 2).map((v) => ({
@@ -84,15 +91,12 @@ export function Dashboard() {
           title: `${t('vehicle.title')} ${v.requestNo}`,
           description: `${v.applicant?.username} ${t('dashboard.requested')} ${v.vehicle?.plateNumber}`,
           time: formatTimeAgo(v.createdAt),
+          createdAt: v.createdAt,
           status: v.status,
         })),
       ];
 
-      activities.sort((a, b) => {
-        const timeA = new Date(a.time).getTime();
-        const timeB = new Date(b.time).getTime();
-        return timeB - timeA;
-      });
+      activities.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
       setRecentActivities(activities.slice(0, 5));
     } catch (error) {

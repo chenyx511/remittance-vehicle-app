@@ -45,7 +45,9 @@
     "minutesAgo": "{{count}}分钟前",
     "hoursAgo": "{{count}}小时前",
     "daysAgo": "{{count}}天前",
-    "allStatus": "全部状态"
+    "allStatus": "全部状态",
+    "langJa": "日本語",
+    "langZh": "中文"
   },
   "auth": {
     "login": "登录",

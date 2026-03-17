@@ -51,6 +51,17 @@ export const setMockCurrentUser = (user: User | null) => {
   currentUser = user;
 };
 
+function appendNotification(input: Omit<Notification, 'id' | 'createdAt' | 'isRead'>) {
+  const notification: Notification = {
+    id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    isRead: false,
+    createdAt: new Date().toISOString(),
+    ...input,
+  };
+  mockNotifications.unshift(notification);
+  saveNotifications(mockNotifications);
+}
+
 // 认证服务
 export const authApi = {
   login: async (
@@ -220,18 +231,14 @@ export const remittanceApi = {
     // 添加汇款申请待审批通知（给审批人）
     const supervisorId = data.supervisorId || newRequest.supervisor?.id;
     if (supervisorId) {
-      mockNotifications.unshift({
-        id: `n-r-${newRequest.id}`,
+      appendNotification({
         userId: supervisorId,
         type: 'REMITTANCE_PENDING',
         title: '新的汇款申请待审批',
         content: `${currentUser?.username || '用户'}提交了一笔${newRequest.amount}${newRequest.currency}的汇款申请`,
         relatedType: 'remittance',
         relatedId: newRequest.id,
-        isRead: false,
-        createdAt: new Date().toISOString(),
       });
-      saveNotifications(mockNotifications);
     }
     saveRemittanceRequests(mockRemittanceRequests);
 
@@ -255,6 +262,16 @@ export const remittanceApi = {
     item.supervisor = currentUser || mockUsers[1];
     item.updatedAt = new Date().toISOString();
     saveRemittanceRequests(mockRemittanceRequests);
+    if (item.applicantId) {
+      appendNotification({
+        userId: item.applicantId,
+        type: 'REMITTANCE_APPROVED',
+        title: '汇款申请已批准',
+        content: `您的汇款申请 ${item.requestNo} 已批准`,
+        relatedType: 'remittance',
+        relatedId: item.id,
+      });
+    }
     return {
       code: 200,
       message: '审批成功',
@@ -275,6 +292,16 @@ export const remittanceApi = {
     item.supervisor = currentUser || mockUsers[1];
     item.updatedAt = new Date().toISOString();
     saveRemittanceRequests(mockRemittanceRequests);
+    if (item.applicantId) {
+      appendNotification({
+        userId: item.applicantId,
+        type: 'REMITTANCE_REJECTED',
+        title: '汇款申请已拒绝',
+        content: `您的汇款申请 ${item.requestNo} 已被拒绝`,
+        relatedType: 'remittance',
+        relatedId: item.id,
+      });
+    }
     return {
       code: 200,
       message: '已拒绝',
@@ -300,6 +327,16 @@ export const remittanceApi = {
     item.completedAt = new Date().toISOString();
     item.updatedAt = new Date().toISOString();
     saveRemittanceRequests(mockRemittanceRequests);
+    if (item.applicantId) {
+      appendNotification({
+        userId: item.applicantId,
+        type: 'REMITTANCE_COMPLETED',
+        title: '汇款申请已完成',
+        content: `您的汇款申请 ${item.requestNo} 已完成`,
+        relatedType: 'remittance',
+        relatedId: item.id,
+      });
+    }
     return {
       code: 200,
       message: '汇款完成',
@@ -415,19 +452,15 @@ export const vehicleApi = {
     // 添加用车申请待审批通知（给审批人）
     const approverId = mockUsers.find((u) => u.role === 'SUPERVISOR')?.id || '2';
     const vehiclePlate = vehicle?.plateNumber || '';
-    mockNotifications.unshift({
-      id: `n-v-${newRequest.id}`,
+    appendNotification({
       userId: approverId,
       type: 'VEHICLE_PENDING',
       title: '新的用车申请待审批',
       content: `${currentUser?.username || '用户'}申请使用${vehiclePlate}车辆`,
       relatedType: 'vehicle',
       relatedId: newRequest.id,
-      isRead: false,
-      createdAt: new Date().toISOString(),
     });
     saveVehicleRequests(mockVehicleRequests);
-    saveNotifications(mockNotifications);
 
     return {
       code: 200,
@@ -449,6 +482,16 @@ export const vehicleApi = {
     item.approver = currentUser || mockUsers[1];
     item.updatedAt = new Date().toISOString();
     saveVehicleRequests(mockVehicleRequests);
+    if (item.applicantId) {
+      appendNotification({
+        userId: item.applicantId,
+        type: 'VEHICLE_APPROVED',
+        title: '用车申请已批准',
+        content: `您的用车申请 ${item.requestNo} 已批准`,
+        relatedType: 'vehicle',
+        relatedId: item.id,
+      });
+    }
     return {
       code: 200,
       message: '审批成功',
@@ -469,6 +512,16 @@ export const vehicleApi = {
     item.approver = currentUser || mockUsers[1];
     item.updatedAt = new Date().toISOString();
     saveVehicleRequests(mockVehicleRequests);
+    if (item.applicantId) {
+      appendNotification({
+        userId: item.applicantId,
+        type: 'VEHICLE_REJECTED',
+        title: '用车申请已拒绝',
+        content: `您的用车申请 ${item.requestNo} 已被拒绝`,
+        relatedType: 'vehicle',
+        relatedId: item.id,
+      });
+    }
     return {
       code: 200,
       message: '已拒绝',
@@ -511,6 +564,16 @@ export const vehicleApi = {
       item.vehicle.status = 'AVAILABLE';
     }
     saveVehicleRequests(mockVehicleRequests);
+    if (item.applicantId) {
+      appendNotification({
+        userId: item.applicantId,
+        type: 'VEHICLE_COMPLETED',
+        title: '用车申请已完成',
+        content: `您的用车申请 ${item.requestNo} 已完成`,
+        relatedType: 'vehicle',
+        relatedId: item.id,
+      });
+    }
     return {
       code: 200,
       message: '用车完成',
@@ -611,8 +674,9 @@ export const notificationApi = {
 
   markAsRead: async (id: string): Promise<ApiResponse<null>> => {
     await delay(200);
+    const uid = currentUser?.id;
     const notification = mockNotifications.find((n) => n.id === id);
-    if (notification) {
+    if (notification && (!uid || notification.userId === uid)) {
       notification.isRead = true;
       saveNotifications(mockNotifications);
     }
@@ -625,7 +689,14 @@ export const notificationApi = {
 
   markAllAsRead: async (): Promise<ApiResponse<null>> => {
     await delay(300);
-    mockNotifications.forEach((n) => (n.isRead = true));
+    const uid = currentUser?.id;
+    if (uid) {
+      mockNotifications.forEach((n) => {
+        if (n.userId === uid) n.isRead = true;
+      });
+    } else {
+      mockNotifications.forEach((n) => (n.isRead = true));
+    }
     saveNotifications(mockNotifications);
     return {
       code: 200,

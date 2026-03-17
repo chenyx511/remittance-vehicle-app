@@ -59,8 +59,8 @@ export function Login() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ja">日本語</SelectItem>
-              <SelectItem value="zh">中文</SelectItem>
+              <SelectItem value="ja">{t('common.langJa')}</SelectItem>
+              <SelectItem value="zh">{t('common.langZh')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
