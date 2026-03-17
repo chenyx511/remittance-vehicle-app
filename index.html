@@ -88,10 +88,14 @@
 
     <!-- 相对路径，适配子路径部署（如 GitHub Pages） -->
     <script>
+      // 临时停用 SW：避免 GitHub Pages 缓存导致页面代码与数据逻辑不同步
       if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          var swPath = './sw.js';
-          navigator.serviceWorker.register(swPath).catch(function() {});
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            registrations.forEach(function(reg) {
+              reg.unregister();
+            });
+          });
         });
       }
       // 若 8 秒后仍为加载态，提示用户（可能是脚本 404 或缓存问题）
