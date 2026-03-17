@@ -1,4 +1,4 @@
-const CACHE_NAME = 'remittance-vehicle-v3';
+const CACHE_NAME = 'remittance-vehicle-v4';
 // 从 sw.js 所在目录推导 app 根路径，支持子路径部署
 const getBase = () => new URL('./', self.location.href).href;
 const getStaticAssets = () => {
@@ -36,6 +36,28 @@ self.addEventListener('fetch', (event) => {
   const isNav = event.request.mode === 'navigate';
   const base = getBase();
   const isAppUrl = event.request.url.startsWith(base) || event.request.url === base.replace(/\/$/, '');
+
+  // 导航请求使用 network-first，避免 index.html 长期命中旧缓存导致页面代码过期
+  if (isNav && isAppUrl) {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          if (response && response.status === 200) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+            return response;
+          }
+          if (response && response.status === 404) {
+            return caches.match(base + 'index.html').then((index) => index || response);
+          }
+          return response;
+        })
+        .catch(() =>
+          caches.match(event.request).then((cached) => cached || caches.match(base + 'index.html')),
+        ),
+    );
+    return;
+  }
 
   event.respondWith(
     caches.match(event.request).then((cached) => {
