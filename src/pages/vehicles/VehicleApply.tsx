@@ -133,7 +133,7 @@ export function VehicleApply() {
                 <SelectTrigger>
                   <SelectValue placeholder={t('vehicle.pleaseSelectVehicle')} />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent side="top" position="popper" collisionPadding={16}>
                   {vehicles.length === 0 ? (
                     <SelectItem value="__none__" disabled>
                       {t('vehicle.noAvailableVehicles')}

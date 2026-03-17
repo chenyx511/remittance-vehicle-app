@@ -15,6 +15,30 @@ import {
   mockVehicles,
   mockNotifications,
 } from './mockData';
+import {
+  loadVehicles,
+  loadVehicleRequests,
+  loadRemittanceRequests,
+  loadNotifications,
+  saveVehicles,
+  saveVehicleRequests,
+  saveRemittanceRequests,
+  saveNotifications,
+} from './persistedStore';
+
+// 从 localStorage 恢复持久化数据（刷新后保留）
+const initVehicles = loadVehicles([...mockVehicles]);
+mockVehicles.length = 0;
+mockVehicles.push(...initVehicles);
+const initRequests = loadVehicleRequests([...mockVehicleRequests]);
+mockVehicleRequests.length = 0;
+mockVehicleRequests.push(...initRequests);
+const initNotifications = loadNotifications([...mockNotifications]);
+mockNotifications.length = 0;
+mockNotifications.push(...initNotifications);
+const initRemittanceRequests = loadRemittanceRequests([...mockRemittanceRequests]);
+mockRemittanceRequests.length = 0;
+mockRemittanceRequests.push(...initRemittanceRequests);
 
 // 模拟延迟
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -192,6 +216,25 @@ export const remittanceApi = {
       updatedAt: new Date().toISOString(),
     };
     mockRemittanceRequests.unshift(newRequest);
+
+    // 添加汇款申请待审批通知（给审批人）
+    const supervisorId = data.supervisorId || newRequest.supervisor?.id;
+    if (supervisorId) {
+      mockNotifications.unshift({
+        id: `n-r-${newRequest.id}`,
+        userId: supervisorId,
+        type: 'REMITTANCE_PENDING',
+        title: '新的汇款申请待审批',
+        content: `${currentUser?.username || '用户'}提交了一笔${newRequest.amount}${newRequest.currency}的汇款申请`,
+        relatedType: 'remittance',
+        relatedId: newRequest.id,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      });
+      saveNotifications(mockNotifications);
+    }
+    saveRemittanceRequests(mockRemittanceRequests);
+
     return {
       code: 200,
       message: '创建成功',
@@ -211,6 +254,7 @@ export const remittanceApi = {
     item.supervisorId = currentUser?.id;
     item.supervisor = currentUser || mockUsers[1];
     item.updatedAt = new Date().toISOString();
+    saveRemittanceRequests(mockRemittanceRequests);
     return {
       code: 200,
       message: '审批成功',
@@ -230,6 +274,7 @@ export const remittanceApi = {
     item.supervisorId = currentUser?.id;
     item.supervisor = currentUser || mockUsers[1];
     item.updatedAt = new Date().toISOString();
+    saveRemittanceRequests(mockRemittanceRequests);
     return {
       code: 200,
       message: '已拒绝',
@@ -254,6 +299,7 @@ export const remittanceApi = {
     item.finance = currentUser || mockUsers[2];
     item.completedAt = new Date().toISOString();
     item.updatedAt = new Date().toISOString();
+    saveRemittanceRequests(mockRemittanceRequests);
     return {
       code: 200,
       message: '汇款完成',
@@ -286,6 +332,7 @@ export const remittanceApi = {
 export const vehicleApi = {
   getList: async (params?: {
     status?: string;
+    keyword?: string;
     page?: number;
     pageSize?: number;
   }): Promise<ApiResponse<PaginatedResponse<VehicleRequest>>> => {
@@ -294,6 +341,17 @@ export const vehicleApi = {
 
     if (params?.status) {
       list = list.filter((item) => item.status === params.status);
+    }
+
+    if (params?.keyword) {
+      const kw = params.keyword.toLowerCase().trim();
+      list = list.filter(
+        (item) =>
+          item.requestNo.toLowerCase().includes(kw) ||
+          (item.destination?.toLowerCase().includes(kw)) ||
+          (item.purpose?.toLowerCase().includes(kw)) ||
+          (item.vehicle?.plateNumber?.toLowerCase().includes(kw)),
+      );
     }
 
     list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -353,6 +411,24 @@ export const vehicleApi = {
       updatedAt: new Date().toISOString(),
     };
     mockVehicleRequests.unshift(newRequest);
+
+    // 添加用车申请待审批通知（给审批人）
+    const approverId = mockUsers.find((u) => u.role === 'SUPERVISOR')?.id || '2';
+    const vehiclePlate = vehicle?.plateNumber || '';
+    mockNotifications.unshift({
+      id: `n-v-${newRequest.id}`,
+      userId: approverId,
+      type: 'VEHICLE_PENDING',
+      title: '新的用车申请待审批',
+      content: `${currentUser?.username || '用户'}申请使用${vehiclePlate}车辆`,
+      relatedType: 'vehicle',
+      relatedId: newRequest.id,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    });
+    saveVehicleRequests(mockVehicleRequests);
+    saveNotifications(mockNotifications);
+
     return {
       code: 200,
       message: '创建成功',
@@ -372,6 +448,7 @@ export const vehicleApi = {
     item.approverId = currentUser?.id;
     item.approver = currentUser || mockUsers[1];
     item.updatedAt = new Date().toISOString();
+    saveVehicleRequests(mockVehicleRequests);
     return {
       code: 200,
       message: '审批成功',
@@ -391,6 +468,7 @@ export const vehicleApi = {
     item.approverId = currentUser?.id;
     item.approver = currentUser || mockUsers[1];
     item.updatedAt = new Date().toISOString();
+    saveVehicleRequests(mockVehicleRequests);
     return {
       code: 200,
       message: '已拒绝',
@@ -411,6 +489,7 @@ export const vehicleApi = {
     if (item.vehicle) {
       item.vehicle.status = 'IN_USE';
     }
+    saveVehicleRequests(mockVehicleRequests);
     return {
       code: 200,
       message: '已开始用车',
@@ -431,6 +510,7 @@ export const vehicleApi = {
     if (item.vehicle) {
       item.vehicle.status = 'AVAILABLE';
     }
+    saveVehicleRequests(mockVehicleRequests);
     return {
       code: 200,
       message: '用车完成',
@@ -465,6 +545,7 @@ export const vehicleApi = {
       status: data.status || 'AVAILABLE',
     };
     mockVehicles.push(newVehicle);
+    saveVehicles(mockVehicles);
     return {
       code: 200,
       message: '创建成功',
@@ -498,6 +579,10 @@ export const notificationApi = {
   getList: async (params?: { isRead?: boolean }): Promise<ApiResponse<Notification[]>> => {
     await delay(300);
     let list = [...mockNotifications];
+    const uid = currentUser?.id;
+    if (uid) {
+      list = list.filter((n) => n.userId === uid);
+    }
     if (params?.isRead !== undefined) {
       list = list.filter((n) => n.isRead === params.isRead);
     }
@@ -511,7 +596,12 @@ export const notificationApi = {
 
   getUnreadCount: async (): Promise<ApiResponse<{ count: number }>> => {
     await delay(200);
-    const count = mockNotifications.filter((n) => !n.isRead).length;
+    let list = mockNotifications;
+    const uid = currentUser?.id;
+    if (uid) {
+      list = list.filter((n) => n.userId === uid);
+    }
+    const count = list.filter((n) => !n.isRead).length;
     return {
       code: 200,
       message: 'success',
@@ -524,6 +614,7 @@ export const notificationApi = {
     const notification = mockNotifications.find((n) => n.id === id);
     if (notification) {
       notification.isRead = true;
+      saveNotifications(mockNotifications);
     }
     return {
       code: 200,
@@ -535,6 +626,7 @@ export const notificationApi = {
   markAllAsRead: async (): Promise<ApiResponse<null>> => {
     await delay(300);
     mockNotifications.forEach((n) => (n.isRead = true));
+    saveNotifications(mockNotifications);
     return {
       code: 200,
       message: 'success',

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Calendar, ChevronLeft, ChevronRight, Car, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,7 +17,9 @@ import { vehicleApi } from '@/services/api';
 import type { Vehicle, VehicleRequest } from '@/types';
 
 export function VehicleSchedule() {
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const dateLocale = i18n.language.startsWith('ja') ? 'ja-JP' : 'zh-CN';
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
   const [schedules, setSchedules] = useState<VehicleRequest[]>([]);
@@ -107,7 +110,7 @@ export function VehicleSchedule() {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
-  const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+  const weekDays = (t('vehicle.weekDays', { returnObjects: true }) as string[]) || ['日', '一', '二', '三', '四', '五', '六'];
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -135,18 +138,18 @@ export function VehicleSchedule() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold">车辆日程</h1>
-            <p className="text-muted-foreground">查看车辆使用安排</p>
+            <h1 className="text-2xl font-bold">{t('vehicle.schedule')}</h1>
+            <p className="text-muted-foreground">{t('vehicle.scheduleSubtitle')}</p>
           </div>
         </div>
-        <Button onClick={() => navigate('/vehicles/apply')}>申请用车</Button>
+        <Button onClick={() => navigate('/vehicles/apply')}>{t('vehicle.apply')}</Button>
       </div>
 
       {/* Vehicle Selection */}
       <Card>
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <span className="text-sm font-medium">选择车辆:</span>
+            <span className="text-sm font-medium">{t('vehicle.selectVehicleLabelShort')}:</span>
             <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId}>
               <SelectTrigger className="w-full sm:w-64">
                 <SelectValue />
@@ -161,13 +164,9 @@ export function VehicleSchedule() {
             </Select>
             {selectedVehicle && (
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <span>颜色: {selectedVehicle.color}</span>
+                <span>{t('vehicle.color')}: {selectedVehicle.color}</span>
                 <Badge variant={selectedVehicle.status === 'AVAILABLE' ? 'success' : 'secondary'}>
-                  {selectedVehicle.status === 'AVAILABLE'
-                    ? '可用'
-                    : selectedVehicle.status === 'IN_USE'
-                      ? '使用中'
-                      : '维修中'}
+                  {t(`vehicle.entityStatus.${selectedVehicle.status}`)}
                 </Badge>
               </div>
             )}
@@ -187,7 +186,7 @@ export function VehicleSchedule() {
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <Button variant="outline" onClick={() => setCurrentDate(new Date())}>
-              今天
+              {t('vehicle.today')}
             </Button>
             <Button variant="outline" size="icon" onClick={nextMonth}>
               <ChevronRight className="h-4 w-4" />
@@ -243,7 +242,7 @@ export function VehicleSchedule() {
                       ))}
                       {daySchedules.length > 2 && (
                         <div className="text-xs text-muted-foreground text-center">
-                          +{daySchedules.length - 2} more
+                          +{daySchedules.length - 2} {t('vehicle.moreItems')}
                         </div>
                       )}
                     </div>
@@ -258,7 +257,7 @@ export function VehicleSchedule() {
       {/* Today's Schedule */}
       <Card>
         <CardHeader>
-          <CardTitle>今日安排</CardTitle>
+          <CardTitle>{t('vehicle.todayArrangements')}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -271,7 +270,7 @@ export function VehicleSchedule() {
 
                 if (todaySchedules.length === 0) {
                   return (
-                    <div className="text-center py-8 text-muted-foreground">今日无用车安排</div>
+                    <div className="text-center py-8 text-muted-foreground">{t('vehicle.noScheduleToday')}</div>
                   );
                 }
 
@@ -288,29 +287,25 @@ export function VehicleSchedule() {
                       <div>
                         <p className="font-medium">{schedule.purpose}</p>
                         <p className="text-sm text-muted-foreground">
-                          申请人: {schedule.applicant?.username}
+                          {t('vehicle.applicantLabel')}: {schedule.applicant?.username}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Clock className="h-4 w-4" />
-                        {new Date(schedule.startTime).toLocaleTimeString('zh-CN', {
+                        {new Date(schedule.startTime).toLocaleTimeString(dateLocale, {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}{' '}
                         -
-                        {new Date(schedule.endTime).toLocaleTimeString('zh-CN', {
+                        {new Date(schedule.endTime).toLocaleTimeString(dateLocale, {
                           hour: '2-digit',
                           minute: '2-digit',
                         })}
                       </div>
                       <Badge variant="secondary" className="mt-1">
-                        {schedule.status === 'PENDING' && '待审批'}
-                        {schedule.status === 'APPROVED' && '已批准'}
-                        {schedule.status === 'IN_USE' && '使用中'}
-                        {schedule.status === 'COMPLETED' && '已完成'}
-                        {schedule.status === 'REJECTED' && '已拒绝'}
+                        {t(`vehicle.status.${schedule.status}`)}
                       </Badge>
                     </div>
                   </div>

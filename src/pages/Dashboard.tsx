@@ -110,9 +110,9 @@ export function Dashboard() {
     const hours = Math.floor(diff / 3600000);
     const days = Math.floor(diff / 86400000);
 
-    if (minutes < 60) return `${minutes}${t('common.minutesAgo')}`;
-    if (hours < 24) return `${hours}${t('common.hoursAgo')}`;
-    return `${days}${t('common.daysAgo')}`;
+    if (minutes < 60) return t('common.minutesAgo', { count: minutes });
+    if (hours < 24) return t('common.hoursAgo', { count: hours });
+    return t('common.daysAgo', { count: days });
   };
 
   const getStatusBadge = (status: string) => {

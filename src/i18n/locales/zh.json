@@ -289,7 +289,15 @@
       "AVAILABLE": "可用",
       "IN_USE": "使用中",
       "MAINTENANCE": "维护中"
-    }
+    },
+    "scheduleSubtitle": "查看车辆使用安排",
+    "selectVehicleLabelShort": "选择车辆",
+    "today": "今天",
+    "todayArrangements": "今日安排",
+    "noScheduleToday": "今日无用车安排",
+    "applicantLabel": "申请人",
+    "moreItems": "更多",
+    "weekDays": ["日", "一", "二", "三", "四", "五", "六"]
   },
   "notifications": {
     "title": "通知中心",

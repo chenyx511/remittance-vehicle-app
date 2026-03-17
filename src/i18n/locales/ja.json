@@ -289,7 +289,15 @@
       "AVAILABLE": "利用可能",
       "IN_USE": "使用中",
       "MAINTENANCE": "メンテナンス中"
-    }
+    },
+    "scheduleSubtitle": "車両利用スケジュールを表示",
+    "selectVehicleLabelShort": "車両を選択",
+    "today": "今日",
+    "todayArrangements": "本日の予定",
+    "noScheduleToday": "本日の車両利用予定はありません",
+    "applicantLabel": "申請者",
+    "moreItems": "件以上",
+    "weekDays": ["日", "月", "火", "水", "木", "金", "土"]
   },
   "notifications": {
     "title": "通知センター",

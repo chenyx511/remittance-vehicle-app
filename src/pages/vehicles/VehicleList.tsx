@@ -54,6 +54,7 @@ export function VehicleList() {
     try {
       const response = await vehicleApi.getList({
         status: statusFilter === 'all' || !statusFilter ? undefined : statusFilter,
+        keyword: searchKeyword.trim() || undefined,
       });
       setRequests(response.data.list);
     } catch {
