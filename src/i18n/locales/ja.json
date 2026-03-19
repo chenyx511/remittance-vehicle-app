@@ -47,7 +47,11 @@
     "daysAgo": "{{count}}日前",
     "allStatus": "すべてのステータス",
     "langJa": "日本語",
-    "langZh": "中文"
+    "langZh": "中文",
+    "currencyUnit": {
+      "CNY": "中国人民元",
+      "JPY": "日本円"
+    }
   },
   "auth": {
     "login": "ログイン",

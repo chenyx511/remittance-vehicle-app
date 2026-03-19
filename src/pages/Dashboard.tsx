@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuthStore } from '@/stores/authStore';
 import { remittanceApi, vehicleApi } from '@/services/api';
 import i18n from '@/i18n';
+import { formatMoneyByLanguage } from '@/lib/currency';
 
 interface DashboardStats {
   pendingRemittances: number;
@@ -80,7 +81,10 @@ export function Dashboard() {
           id: r.id,
           type: 'remittance' as const,
           title: `${t('remittance.title')} ${r.requestNo}`,
-          description: `${r.applicant?.username} ${t('dashboard.submitted')} ¥${r.amount.toLocaleString()} ${t('remittance.title')}`,
+          description: `${r.applicant?.username} ${t('dashboard.submitted')} ${formatMoneyByLanguage(
+            r.amount,
+            i18n.language,
+          )} ${t('remittance.title')}`,
           time: formatTimeAgo(r.createdAt),
           createdAt: r.createdAt,
           status: r.status,

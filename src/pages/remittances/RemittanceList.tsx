@@ -25,6 +25,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { remittanceApi } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
+import { formatMoneyByLanguage, getDisplayCurrencyCode } from '@/lib/currency';
 import type { RemittanceRequest } from '@/types';
 
 export function RemittanceList() {
@@ -41,6 +42,10 @@ export function RemittanceList() {
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const formatAmount = (amount: number) => formatMoneyByLanguage(amount, i18n.language);
+  const getCurrencyLabel = () =>
+    t(`common.currencyUnit.${getDisplayCurrencyCode(i18n.language)}`);
 
   useEffect(() => {
     fetchRequests();
@@ -223,8 +228,8 @@ export function RemittanceList() {
                   <div className="flex items-center gap-4 mt-4 sm:mt-0">
                     {request.amount > 0 && (
                       <div className="text-right">
-                        <div className="text-xl font-bold">¥{request.amount.toLocaleString()}</div>
-                        <div className="text-sm text-muted-foreground">{request.currency}</div>
+                        <div className="text-xl font-bold">{formatAmount(request.amount)}</div>
+                        <div className="text-sm text-muted-foreground">{getCurrencyLabel()}</div>
                       </div>
                     )}
                     <div className="flex items-center gap-2">

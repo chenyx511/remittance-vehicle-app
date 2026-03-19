@@ -43,6 +43,14 @@ mockRemittanceRequests.push(...initRemittanceRequests);
 // 模拟延迟
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const fileToDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('文件读取失败'));
+    reader.readAsDataURL(file);
+  });
+
 // 当前登录用户（仅用于 mock 环境）
 let currentUser: User | null = null;
 
@@ -346,20 +354,13 @@ export const remittanceApi = {
 
   upload: async (file: File, type: 'settlement' | 'proof'): Promise<ApiResponse<{ url: string }>> => {
     await delay(1000);
-    // 参数目前仅用于占位，方便未来接入真实上传接口
-    void file;
+    const url = await fileToDataUrl(file);
     void type;
-    // 模拟上传，返回一个随机图片URL
-    const urls = [
-      'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=800',
-      'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800',
-      'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=800',
-    ];
     return {
       code: 200,
       message: '上传成功',
       data: {
-        url: urls[Math.floor(Math.random() * urls.length)],
+        url,
       },
     };
   },

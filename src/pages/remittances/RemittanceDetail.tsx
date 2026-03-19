@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { remittanceApi } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
+import { formatMoneyByLanguage, getDisplayCurrencyCode } from '@/lib/currency';
 import type { RemittanceRequest } from '@/types';
 
 export function RemittanceDetail() {
@@ -44,6 +45,10 @@ export function RemittanceDetail() {
   const [proofUrl, setProofUrl] = useState('');
   const [isProofUploading, setIsProofUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const formatAmount = (amount: number) => formatMoneyByLanguage(amount, i18n.language);
+  const getCurrencyLabel = () =>
+    t(`common.currencyUnit.${getDisplayCurrencyCode(i18n.language)}`);
 
   useEffect(() => {
     if (id) {
@@ -251,8 +256,8 @@ export function RemittanceDetail() {
               {request.amount > 0 && (
                 <div>
                   <Label className="text-muted-foreground">{t('common.amount')}</Label>
-                  <p className="text-2xl font-bold text-primary">¥{request.amount.toLocaleString()}</p>
-                  <p className="text-sm text-muted-foreground">{request.currency}</p>
+                  <p className="text-2xl font-bold text-primary">{formatAmount(request.amount)}</p>
+                  <p className="text-sm text-muted-foreground">{getCurrencyLabel()}</p>
                 </div>
               )}
               {request.recipientName && request.recipientName !== 'N/A' && (
@@ -284,6 +289,13 @@ export function RemittanceDetail() {
             <CardTitle>{t('remittance.settlementDetail')}</CardTitle>
           </CardHeader>
           <CardContent>
+            <div className="border rounded-lg overflow-hidden max-w-md">
+              <img
+                src={request.settlementDetailUrl}
+                alt="Settlement Detail"
+                className="w-full h-auto"
+              />
+            </div>
             <div className="flex items-center gap-2">
               <Button asChild variant="outline" size="sm">
                 <a href={request.settlementDetailUrl} target="_blank" rel="noreferrer">
