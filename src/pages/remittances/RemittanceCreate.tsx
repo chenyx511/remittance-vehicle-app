@@ -1,9 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Upload, X, Loader2 } from 'lucide-react';
+import { Upload, X, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -77,15 +76,6 @@ export function RemittanceCreate() {
     e.preventDefault();
     setError(null);
 
-    // Validation
-    if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      setError(t('remittance.invalidAmount'));
-      return;
-    }
-    if (!formData.recipientName) {
-      setError(t('remittance.recipientNamePlaceholder'));
-      return;
-    }
     if (!formData.supervisorId) {
       setError(t('remittance.selectSupervisorRequired'));
       return;
@@ -94,12 +84,12 @@ export function RemittanceCreate() {
     setIsSubmitting(true);
     try {
       await remittanceApi.create({
-        contractNo: formData.contractNo,
-        amount: parseFloat(formData.amount),
-        currency: formData.currency,
-        recipientName: formData.recipientName,
-        recipientAccount: formData.recipientAccount,
-        recipientBank: formData.recipientBank,
+        contractNo: formData.contractNo || undefined,
+        amount: parseFloat(formData.amount) || 0,
+        currency: formData.currency || 'CNY',
+        recipientName: formData.recipientName || 'N/A',
+        recipientAccount: formData.recipientAccount || undefined,
+        recipientBank: formData.recipientBank || undefined,
         settlementDetailUrl: formData.settlementDetailUrl,
         supervisorId: formData.supervisorId,
       });
@@ -115,17 +105,6 @@ export function RemittanceCreate() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate('/remittances')}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">{t('remittance.create')}</h1>
-          <p className="text-muted-foreground">{t('remittance.createSubtitle')}</p>
-        </div>
-      </div>
-
       {error && (
         <Alert variant="destructive">
           <AlertDescription>{error}</AlertDescription>
@@ -133,100 +112,6 @@ export function RemittanceCreate() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Contract Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('remittance.contractInfo')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="contractNo">{t('remittance.contractNo')}</Label>
-              <Input
-                id="contractNo"
-                placeholder={t('remittance.contractNoPlaceholder')}
-                value={formData.contractNo}
-                onChange={(e) => handleInputChange('contractNo', e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Amount Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('common.amount')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="amount">{t('remittance.amountLabel')}</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  placeholder={t('remittance.amountPlaceholder')}
-                  value={formData.amount}
-                  onChange={(e) => handleInputChange('amount', e.target.value)}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="currency">{t('common.currency')}</Label>
-                <Select
-                  value={formData.currency}
-                  onValueChange={(value) => handleInputChange('currency', value)}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="CNY">CNY</SelectItem>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="JPY">JPY</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recipient Info */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('remittance.recipientInfo')}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <Label htmlFor="recipientName">{t('remittance.recipientName')} *</Label>
-              <Input
-                id="recipientName"
-                placeholder={t('remittance.recipientNamePlaceholder')}
-                value={formData.recipientName}
-                onChange={(e) => handleInputChange('recipientName', e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="recipientAccount">{t('remittance.recipientAccount')}</Label>
-              <Input
-                id="recipientAccount"
-                placeholder={t('remittance.recipientAccountPlaceholder')}
-                value={formData.recipientAccount}
-                onChange={(e) => handleInputChange('recipientAccount', e.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="recipientBank">{t('remittance.recipientBank')}</Label>
-              <Input
-                id="recipientBank"
-                placeholder={t('remittance.recipientBankPlaceholder')}
-                value={formData.recipientBank}
-                onChange={(e) => handleInputChange('recipientBank', e.target.value)}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Settlement Detail */}
         <Card>
           <CardHeader>
