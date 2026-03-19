@@ -130,7 +130,7 @@
     "remittanceProof": "送金証明",
     "remittanceDate": "送金日",
     "uploadProof": "送金証明をアップロード",
-    "selectSupervisor": "承認上司を選択",
+    "selectSupervisor": "承認先を選択",
     "status": {
       "PENDING": "承認待ち",
       "SUPERVISOR_APPROVED": "上司承認済",
@@ -202,7 +202,7 @@
     "remarkPlaceholder": "備考を入力（任意）",
     "uploadFailed": "アップロードに失敗しました",
     "invalidAmount": "有効な金額を入力してください",
-    "selectSupervisorRequired": "承認上司を選択してください",
+    "selectSupervisorRequired": "承認先を選択してください",
     "submitFailed": "送信に失敗しました",
     "submitting": "送信中..."
   },

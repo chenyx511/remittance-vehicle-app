@@ -130,7 +130,7 @@
     "remittanceProof": "汇款凭证",
     "remittanceDate": "汇款日期",
     "uploadProof": "上传汇款凭证",
-    "selectSupervisor": "选择审批上级",
+    "selectSupervisor": "选择审批人",
     "status": {
       "PENDING": "待审批",
       "SUPERVISOR_APPROVED": "上级已批准",
@@ -202,7 +202,7 @@
     "remarkPlaceholder": "请输入备注信息（可选）",
     "uploadFailed": "上传失败，请重试",
     "invalidAmount": "请输入有效的汇款金额",
-    "selectSupervisorRequired": "请选择审批上级",
+    "selectSupervisorRequired": "请选择审批人",
     "submitFailed": "提交失败，请重试",
     "submitting": "提交中..."
   },
