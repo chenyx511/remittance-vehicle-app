@@ -200,19 +200,33 @@ export function RemittanceList() {
                       <span className="font-semibold">{request.requestNo}</span>
                       {getStatusBadge(request.status)}
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {t('remittance.contractShort')}: {request.contractNo || '-'} · {t('remittance.recipientShortLabel')}: {request.recipientName}
-                    </div>
+                    {(request.contractNo || (request.recipientName && request.recipientName !== 'N/A')) && (
+                      <div className="text-sm text-muted-foreground">
+                        {request.contractNo && (
+                          <>
+                            {t('remittance.contractShort')}: {request.contractNo}
+                          </>
+                        )}
+                        {request.contractNo && request.recipientName && request.recipientName !== 'N/A' && ' · '}
+                        {request.recipientName && request.recipientName !== 'N/A' && (
+                          <>
+                            {t('remittance.recipientShortLabel')}: {request.recipientName}
+                          </>
+                        )}
+                      </div>
+                    )}
                     <div className="text-sm">
                       {t('remittance.applicant')}: {request.applicant?.username} · {t('remittance.applicationTime')}:{' '}
                       {new Date(request.createdAt).toLocaleString(dateLocale)}
                     </div>
                   </div>
                   <div className="flex items-center gap-4 mt-4 sm:mt-0">
-                    <div className="text-right">
-                      <div className="text-xl font-bold">¥{request.amount.toLocaleString()}</div>
-                      <div className="text-sm text-muted-foreground">{request.currency}</div>
-                    </div>
+                    {request.amount > 0 && (
+                      <div className="text-right">
+                        <div className="text-xl font-bold">¥{request.amount.toLocaleString()}</div>
+                        <div className="text-sm text-muted-foreground">{request.currency}</div>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2">
                       <Button
                         variant="ghost"

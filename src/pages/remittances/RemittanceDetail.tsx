@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, CheckCircle, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, XCircle, Upload, Eye, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,6 +42,7 @@ export function RemittanceDetail() {
   const [comment, setComment] = useState('');
   const [remittanceDate, setRemittanceDate] = useState('');
   const [proofUrl, setProofUrl] = useState('');
+  const [isProofUploading, setIsProofUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -115,6 +116,22 @@ export function RemittanceDetail() {
       setError(message || t('errors.generic'));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleProofUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsProofUploading(true);
+    try {
+      const response = await remittanceApi.upload(file, 'proof');
+      setProofUrl(response.data.url);
+    } catch (error: unknown) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const message = (error as any)?.message as string | undefined;
+      setError(message || t('remittance.uploadFailed'));
+    } finally {
+      setIsProofUploading(false);
     }
   };
 
@@ -225,19 +242,25 @@ export function RemittanceDetail() {
               <p className="font-medium">{request.applicant?.username}</p>
               <p className="text-sm text-muted-foreground">{request.applicant?.department}</p>
             </div>
-            <div>
-              <Label className="text-muted-foreground">{t('remittance.contractNo')}</Label>
-              <p className="font-medium">{request.contractNo || '-'}</p>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">{t('common.amount')}</Label>
-              <p className="text-2xl font-bold text-primary">¥{request.amount.toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground">{request.currency}</p>
-            </div>
-            <div>
-              <Label className="text-muted-foreground">{t('remittance.recipientShort')}</Label>
-              <p className="font-medium">{request.recipientName}</p>
-            </div>
+              {request.contractNo && (
+                <div>
+                  <Label className="text-muted-foreground">{t('remittance.contractNo')}</Label>
+                  <p className="font-medium">{request.contractNo}</p>
+                </div>
+              )}
+              {request.amount > 0 && (
+                <div>
+                  <Label className="text-muted-foreground">{t('common.amount')}</Label>
+                  <p className="text-2xl font-bold text-primary">¥{request.amount.toLocaleString()}</p>
+                  <p className="text-sm text-muted-foreground">{request.currency}</p>
+                </div>
+              )}
+              {request.recipientName && request.recipientName !== 'N/A' && (
+                <div>
+                  <Label className="text-muted-foreground">{t('remittance.recipientShort')}</Label>
+                  <p className="font-medium">{request.recipientName}</p>
+                </div>
+              )}
             {request.recipientAccount && (
               <div>
                 <Label className="text-muted-foreground">{t('remittance.recipientAccount')}</Label>
@@ -261,12 +284,19 @@ export function RemittanceDetail() {
             <CardTitle>{t('remittance.settlementDetail')}</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="border rounded-lg overflow-hidden max-w-md">
-              <img
-                src={request.settlementDetailUrl}
-                alt="Settlement Detail"
-                className="w-full h-auto"
-              />
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" size="sm">
+                <a href={request.settlementDetailUrl} target="_blank" rel="noreferrer">
+                  <Eye className="mr-2 h-4 w-4" />
+                  {t('common.view')}
+                </a>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <a href={request.settlementDetailUrl} download>
+                  <Download className="mr-2 h-4 w-4" />
+                  {t('common.download')}
+                </a>
+              </Button>
             </div>
           </CardContent>
         </Card>
@@ -388,6 +418,20 @@ export function RemittanceDetail() {
                 className="w-full h-auto"
               />
             </div>
+            <div className="flex items-center gap-2 mt-3">
+              <Button asChild variant="outline" size="sm">
+                <a href={request.remittanceProofUrl} target="_blank" rel="noreferrer">
+                  <Eye className="mr-2 h-4 w-4" />
+                  {t('common.view')}
+                </a>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <a href={request.remittanceProofUrl} download>
+                  <Download className="mr-2 h-4 w-4" />
+                  {t('common.download')}
+                </a>
+              </Button>
+            </div>
             {request.remittanceDate && (
               <p className="text-sm text-muted-foreground mt-2">
                 {t('remittance.remittanceDate')}: {request.remittanceDate}
@@ -466,12 +510,45 @@ export function RemittanceDetail() {
               />
             </div>
             <div>
-              <Label>{t('remittance.voucherUrlLabel')}</Label>
-              <Input
-                placeholder={t('remittance.voucherUrlPlaceholder')}
-                value={proofUrl}
-                onChange={(e) => setProofUrl(e.target.value)}
-              />
+              <Label>{t('remittance.uploadProof')}</Label>
+              <div className="mt-2 border-2 border-dashed border-muted rounded-lg p-4">
+                {proofUrl ? (
+                  <div className="space-y-3">
+                    <img src={proofUrl} alt="proof" className="max-h-48 rounded-lg mx-auto" />
+                    <div className="flex justify-center gap-2">
+                      <Button asChild variant="outline" size="sm">
+                        <a href={proofUrl} target="_blank" rel="noreferrer">
+                          <Eye className="mr-2 h-4 w-4" />
+                          {t('common.view')}
+                        </a>
+                      </Button>
+                      <Button asChild variant="outline" size="sm">
+                        <a href={proofUrl} download>
+                          <Download className="mr-2 h-4 w-4" />
+                          {t('common.download')}
+                        </a>
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <label className="flex flex-col items-center cursor-pointer">
+                    <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                    <span className="text-sm text-muted-foreground">{t('remittance.uploadProof')}</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleProofUpload}
+                      disabled={isProofUploading}
+                    />
+                  </label>
+                )}
+                {isProofUploading && (
+                  <div className="flex justify-center mt-3">
+                    <span className="text-sm text-muted-foreground">{t('common.loading')}</span>
+                  </div>
+                )}
+              </div>
             </div>
             <div>
               <Label>{t('remittance.remarksLabel')}</Label>
@@ -486,7 +563,7 @@ export function RemittanceDetail() {
             <Button variant="outline" onClick={() => setIsCompleteDialogOpen(false)}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={handleComplete} disabled={isSubmitting || !remittanceDate}>
+            <Button onClick={handleComplete} disabled={isSubmitting || !remittanceDate || !proofUrl}>
               {isSubmitting ? t('remittance.processing') : t('remittance.confirmCompleteButton')}
             </Button>
           </DialogFooter>
