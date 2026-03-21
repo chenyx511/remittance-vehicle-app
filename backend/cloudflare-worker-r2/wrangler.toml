@@ -1,0 +1,13 @@
+name = "remittance-upload-worker"
+main = "src/index.ts"
+compatibility_date = "2024-11-01"
+
+# 推荐在 Cloudflare Dashboard 中配置 secrets/vars
+[vars]
+ALLOWED_ORIGIN = "*"
+MAX_FILE_SIZE_MB = "8"
+PUBLIC_BASE_URL = ""
+
+[[r2_buckets]]
+binding = "UPLOAD_BUCKET"
+bucket_name = "remittance-upload-bucket"

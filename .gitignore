@@ -24,6 +24,9 @@ Thumbs.db
 npm-debug.log*
 pnpm-debug.log*
 
+# Upload backend runtime files
+backend/upload-server/uploads/
+
 # Test / coverage
 coverage/
 .nyc_output/

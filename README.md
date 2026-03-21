@@ -103,6 +103,50 @@ npx serve dist -p 5000
 
 ---
 
+## 最小后端接入（图片上传）
+
+为了解决“担当上传图片后，上司在其他浏览器/设备看不到”的问题，项目已支持**可配置上传后端**：
+
+1. 复制环境变量示例并配置上传接口：
+
+```bash
+cp .env.example .env
+```
+
+在 `.env` 中设置：
+
+```bash
+VITE_UPLOAD_API_URL=https://your-upload-api.example.com/upload
+```
+
+2. 启动前端后，汇款申请中的“决算明细/汇款凭证”上传会优先走后端接口。
+3. 若不配置该变量，系统会回退到本地模式（仅当前浏览器可见，不跨浏览器共享）。
+
+仓库已提供可直接运行的最小后端示例：`backend/upload-server/`。
+也提供了无服务器版本：`backend/cloudflare-worker-r2/`（Cloudflare Worker + R2）。
+
+### 上传接口约定（最小）
+
+- 请求：`POST` `multipart/form-data`
+  - `file`: 文件（二进制）
+  - `type`: `settlement` 或 `proof`
+  - `filename`: 原文件名
+- 成功响应（任一形式均支持）：
+
+```json
+{ "url": "https://cdn.example.com/xxx.jpg" }
+```
+
+或
+
+```json
+{ "data": { "url": "https://cdn.example.com/xxx.jpg" } }
+```
+
+建议后端将文件存入对象存储（如 S3 / OSS / Supabase Storage）并返回可访问 URL。
+
+---
+
 ## 部署到 GitHub
 
 ### 一、把代码推送到 GitHub

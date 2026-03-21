@@ -51,6 +51,65 @@ const fileToDataUrl = (file: File) =>
     reader.readAsDataURL(file);
   });
 
+const compressImageDataUrl = (dataUrl: string, maxSide = 1280, quality = 0.75) =>
+  new Promise<string>((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const longestSide = Math.max(img.width, img.height);
+      const scale = longestSide > maxSide ? maxSide / longestSide : 1;
+      const width = Math.max(1, Math.round(img.width * scale));
+      const height = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+      ctx.drawImage(img, 0, 0, width, height);
+      // 统一转为 jpeg，显著降低 base64 体积，减少 localStorage 超限概率
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+
+const getBackendUploadUrl = () => {
+  const url = import.meta.env.VITE_UPLOAD_API_URL;
+  return typeof url === 'string' && url.trim() ? url.trim() : '';
+};
+
+const uploadToBackend = async (file: File, type: 'settlement' | 'proof') => {
+  const uploadUrl = getBackendUploadUrl();
+  if (!uploadUrl) return null;
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('type', type);
+  formData.append('filename', file.name);
+
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`上传服务异常（${response.status}）`);
+  }
+
+  const payload = (await response.json()) as {
+    url?: string;
+    data?: { url?: string };
+    message?: string;
+  };
+  const url = payload?.data?.url || payload?.url;
+  if (!url) {
+    throw new Error(payload?.message || '上传服务返回无效地址');
+  }
+  return url;
+};
+
 // 当前登录用户（仅用于 mock 环境）
 let currentUser: User | null = null;
 
@@ -354,8 +413,12 @@ export const remittanceApi = {
 
   upload: async (file: File, type: 'settlement' | 'proof'): Promise<ApiResponse<{ url: string }>> => {
     await delay(1000);
-    const url = await fileToDataUrl(file);
-    void type;
+    const backendUrl = await uploadToBackend(file, type);
+    const url =
+      backendUrl ||
+      (file.type.startsWith('image/')
+        ? await compressImageDataUrl(await fileToDataUrl(file))
+        : await fileToDataUrl(file));
     return {
       code: 200,
       message: '上传成功',
