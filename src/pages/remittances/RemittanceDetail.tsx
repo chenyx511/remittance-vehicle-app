@@ -294,6 +294,18 @@ export function RemittanceDetail() {
                 src={request.settlementDetailUrl}
                 alt="Settlement Detail"
                 className="w-full h-auto"
+                referrerPolicy="no-referrer"
+                onError={(e) => {
+                  const el = e.currentTarget;
+                  el.style.display = 'none';
+                  const wrap = el.parentElement;
+                  if (wrap && !wrap.querySelector('.image-load-failed')) {
+                    const hint = document.createElement('div');
+                    hint.className = 'image-load-failed p-4 bg-muted rounded-lg text-sm text-muted-foreground';
+                    hint.innerHTML = `${t('remittance.imageLoadFailed')}。${t('remittance.imageLoadFailedHint')}<br/><a href="${request.settlementDetailUrl}" target="_blank" rel="noreferrer" class="text-primary underline break-all">${request.settlementDetailUrl}</a>`;
+                    wrap.appendChild(hint);
+                  }
+                }}
               />
             </div>
             <div className="flex items-center gap-2">
