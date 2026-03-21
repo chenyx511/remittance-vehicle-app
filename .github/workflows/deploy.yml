@@ -30,6 +30,8 @@ jobs:
         run: npm run build
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
+          # 在仓库 Settings → Secrets → Actions 中配置，值为 Vercel 部署地址，如 https://xxx.vercel.app/api/upload
+          VITE_UPLOAD_API_URL: ${{ secrets.VITE_UPLOAD_API_URL }}
 
       - name: Copy index to 404 (SPA 路由)
         run: cp dist/index.html dist/404.html
