@@ -26,6 +26,7 @@ pnpm-debug.log*
 
 # Upload backend runtime files
 backend/upload-server/uploads/
+server/uploads/
 
 # Test / coverage
 coverage/

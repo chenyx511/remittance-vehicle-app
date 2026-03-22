@@ -122,8 +122,10 @@ VITE_UPLOAD_API_URL=https://your-upload-api.example.com/upload
 2. 启动前端后，汇款申请中的“决算明细/汇款凭证”上传会优先走后端接口。
 3. 若不配置该变量，系统会回退到本地模式（仅当前浏览器可见，不跨浏览器共享）。
 
-仓库已提供可直接运行的最小后端示例：`backend/upload-server/`。
-也提供了无服务器版本：`backend/cloudflare-worker-r2/`（Cloudflare Worker + R2）。
+仓库已提供：
+- `backend/upload-server/`：Node/Express 可直接运行示例
+- `backend/cloudflare-worker-r2/`：Cloudflare Worker + R2（需开通 R2）
+- **Vercel + GitHub 存储**：上传图片写入 GitHub 仓库，免 R2/自建，见 [docs/vercel-github-upload.md](docs/vercel-github-upload.md)
 
 ### 上传接口约定（最小）
 

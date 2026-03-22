@@ -20,6 +20,19 @@ export const setMockCurrentUser = (user: User | null) => {
   currentUser = user;
 };
 
+/** 申请可见性：担当只能看自己的，上司/财务/管理员可看全部 */
+function canViewRemittance(item: RemittanceRequest): boolean {
+  if (!currentUser) return false;
+  if (currentUser.role === 'ADMIN' || currentUser.role === 'SUPERVISOR' || currentUser.role === 'FINANCE') return true;
+  return item.applicantId === currentUser.id;
+}
+
+function canViewVehicleRequest(item: VehicleRequest): boolean {
+  if (!currentUser) return false;
+  if (currentUser.role === 'ADMIN' || currentUser.role === 'SUPERVISOR' || currentUser.role === 'FINANCE') return true;
+  return item.applicantId === currentUser.id;
+}
+
 function toUser(row: Record<string, unknown> | null): User | undefined {
   if (!row) return undefined;
   return {
@@ -276,7 +289,7 @@ export const remittanceApi = {
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const users = await fetchUsersMap();
-    const list = (rows || []).map((r) => toRemittanceRequest(r, users));
+    let list = (rows || []).map((r) => toRemittanceRequest(r, users)).filter(canViewRemittance);
     const page = params?.page || 1;
     const pageSize = params?.pageSize || 10;
     const total = list.length;
@@ -300,7 +313,9 @@ export const remittanceApi = {
       .single();
     if (error || !data) throw new Error('申请不存在');
     const users = await fetchUsersMap();
-    return { code: 200, message: 'success', data: toRemittanceRequest(data, users) };
+    const item = toRemittanceRequest(data, users);
+    if (!canViewRemittance(item)) throw new Error('申请不存在');
+    return { code: 200, message: 'success', data: item };
   },
 
   create: async (data: Partial<RemittanceRequest>): Promise<ApiResponse<RemittanceRequest>> => {
@@ -469,7 +484,7 @@ export const vehicleApi = {
     if (error) throw new Error(error.message);
     const users = await fetchUsersMap();
     const vehicles = await fetchVehiclesMap();
-    let list = (rows || []).map((r) => toVehicleRequest(r, users, vehicles));
+    let list = (rows || []).map((r) => toVehicleRequest(r, users, vehicles)).filter(canViewVehicleRequest);
     if (params?.keyword) {
       const kw = params.keyword.toLowerCase();
       list = list.filter(
@@ -504,11 +519,9 @@ export const vehicleApi = {
     if (error || !data) throw new Error('申请不存在');
     const users = await fetchUsersMap();
     const vehicles = await fetchVehiclesMap();
-    return {
-      code: 200,
-      message: 'success',
-      data: toVehicleRequest(data, users, vehicles),
-    };
+    const item = toVehicleRequest(data, users, vehicles);
+    if (!canViewVehicleRequest(item)) throw new Error('申请不存在');
+    return { code: 200, message: 'success', data: item };
   },
 
   create: async (data: Partial<VehicleRequest>): Promise<ApiResponse<VehicleRequest>> => {

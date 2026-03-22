@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "server:upload": "node server/upload-server.js",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest",
@@ -47,6 +48,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
+    "express": "^5.2.1",
     "formidable": "^3.5.2",
     "i18next": "^25.8.18",
     "i18next-browser-languagedetector": "^8.2.1",

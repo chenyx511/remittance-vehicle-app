@@ -64,6 +64,19 @@ export const setMockCurrentUser = (user: User | null) => {
   currentUser = user;
 };
 
+/** 申请可见性：担当只能看自己的，上司/财务/管理员可看全部 */
+function canViewRemittance(item: RemittanceRequest): boolean {
+  if (!currentUser) return false;
+  if (currentUser.role === 'ADMIN' || currentUser.role === 'SUPERVISOR' || currentUser.role === 'FINANCE') return true;
+  return item.applicantId === currentUser.id;
+}
+
+function canViewVehicleRequest(item: VehicleRequest): boolean {
+  if (!currentUser) return false;
+  if (currentUser.role === 'ADMIN' || currentUser.role === 'SUPERVISOR' || currentUser.role === 'FINANCE') return true;
+  return item.applicantId === currentUser.id;
+}
+
 function appendNotification(input: Omit<Notification, 'id' | 'createdAt' | 'isRead'>) {
   const notification: Notification = {
     id: `n-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -219,6 +232,8 @@ export const remittanceApi = {
       );
     }
 
+    list = list.filter(canViewRemittance);
+
     // 按时间倒序
     list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
@@ -247,7 +262,7 @@ export const remittanceApi = {
   getById: async (id: string): Promise<ApiResponse<RemittanceRequest>> => {
     await delay(300);
     const item = mockRemittanceRequests.find((r) => r.id === id);
-    if (!item) {
+    if (!item || !canViewRemittance(item)) {
       throw new Error('申请不存在');
     }
     return {
@@ -427,6 +442,8 @@ export const vehicleApi = {
       );
     }
 
+    list = list.filter(canViewVehicleRequest);
+
     list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     const page = params?.page || 1;
@@ -454,7 +471,7 @@ export const vehicleApi = {
   getById: async (id: string): Promise<ApiResponse<VehicleRequest>> => {
     await delay(300);
     const item = mockVehicleRequests.find((r) => r.id === id);
-    if (!item) {
+    if (!item || !canViewVehicleRequest(item)) {
       throw new Error('申请不存在');
     }
     return {

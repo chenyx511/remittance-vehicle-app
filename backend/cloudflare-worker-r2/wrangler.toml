@@ -4,8 +4,10 @@ compatibility_date = "2024-11-01"
 
 # 推荐在 Cloudflare Dashboard 中配置 secrets/vars
 [vars]
-ALLOWED_ORIGIN = "*"
+# 前端 GitHub Pages 域名（CORS 白名单）
+ALLOWED_ORIGIN = "https://chenyx511.github.io"
 MAX_FILE_SIZE_MB = "8"
+# 留空则使用 Worker 自身域名，部署后若绑定自定义域名可在此填写
 PUBLIC_BASE_URL = ""
 
 [[r2_buckets]]
