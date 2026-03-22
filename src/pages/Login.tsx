@@ -148,8 +148,6 @@ export function Login() {
             </div>
           </CardContent>
         </Card>
-
-        <p className="text-center text-sm text-muted-foreground mt-6">{t('auth.demoNote')}</p>
       </div>
     </div>
   );
