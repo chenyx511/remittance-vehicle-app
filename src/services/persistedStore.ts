@@ -60,3 +60,18 @@ export function saveNotifications(data: Notification[]) {
 export function saveRemittanceRequests(data: RemittanceRequest[]) {
   saveJson(STORAGE_KEYS.remittanceRequests, data);
 }
+
+const ADMIN_CREDENTIALS_KEY = 'remittance_app_admin_credentials';
+
+export interface AdminCredentials {
+  username: string;
+  passwordHash: string;
+}
+
+export function loadAdminCredentials(): AdminCredentials | null {
+  return loadJson<AdminCredentials>(ADMIN_CREDENTIALS_KEY);
+}
+
+export function saveAdminCredentials(data: AdminCredentials) {
+  saveJson(ADMIN_CREDENTIALS_KEY, data);
+}

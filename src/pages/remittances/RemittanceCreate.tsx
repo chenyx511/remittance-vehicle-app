@@ -64,9 +64,10 @@ export function RemittanceCreate() {
       const response = await remittanceApi.upload(file, 'settlement');
       setUploadedImage(response.data.url);
       setFormData((prev) => ({ ...prev, settlementDetailUrl: response.data.url }));
-    } catch {
-      console.error('Failed to upload file');
-      setError(t('remittance.uploadFailed'));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t('remittance.uploadFailed');
+      console.error('Upload failed:', err);
+      setError(msg);
     } finally {
       setIsLoading(false);
     }

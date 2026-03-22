@@ -78,7 +78,7 @@
     "registerSuccess": "注册成功",
     "passwordMismatch": "密码不一致",
     "demoAccounts": "快速登录（演示账号）",
-    "demoNote": "演示系统·任意密码即可登录"
+    "demoNote": "演示账号（担当/上级/财务）任意密码；管理员需输入密码 123456"
   },
   "roles": {
     "STAFF": "担当",
@@ -92,7 +92,8 @@
     "vehicle": "用车申请",
     "notifications": "通知中心",
     "profile": "个人中心",
-    "schedule": "车辆日程"
+    "schedule": "车辆日程",
+    "admin": "后台管理"
   },
   "dashboard": {
     "greeting": "您好",
@@ -201,6 +202,8 @@
     "approverTitle": "审批人",
     "remarkPlaceholder": "请输入备注信息（可选）",
     "uploadFailed": "上传失败，请重试",
+    "imageLoadFailed": "图片加载失败",
+    "imageLoadFailedHint": "可点击下方链接在新窗口打开",
     "invalidAmount": "请输入有效的汇款金额",
     "selectSupervisorRequired": "请选择审批人",
     "submitFailed": "提交失败，请重试",
@@ -358,6 +361,26 @@
     "maxLength": "{{field}}不能超过{{max}}个字符",
     "invalidAmount": "请输入有效的金额",
     "endTimeAfterStart": "结束时间必须晚于开始时间"
+  },
+  "admin": {
+    "title": "后台管理",
+    "subtitle": "管理用户账号与权限",
+    "userManagement": "用户管理",
+    "userManagementDesc": "修改用户角色以调整其审批与访问权限",
+    "fetchFailed": "获取用户列表失败",
+    "updateFailed": "更新角色失败",
+    "accountSettings": "管理员账号设置",
+    "accountSettingsDesc": "修改管理员用户名和密码",
+    "currentPassword": "当前密码",
+    "currentPasswordPlaceholder": "请输入当前密码",
+    "newUsername": "新用户名",
+    "newPassword": "新密码",
+    "newPasswordPlaceholder": "不修改请留空",
+    "confirmPasswordPlaceholder": "再次输入新密码",
+    "updateCredentials": "更新账号",
+    "currentPasswordRequired": "请输入当前密码",
+    "enterNewValue": "请输入新用户名或新密码",
+    "credentialsUpdated": "账号已更新"
   },
   "errors": {
     "generic": "发生错误",

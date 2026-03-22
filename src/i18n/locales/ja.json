@@ -78,7 +78,7 @@
     "registerSuccess": "登録が完了しました",
     "passwordMismatch": "パスワードが一致しません",
     "demoAccounts": "デモアカウント（クイックログイン）",
-    "demoNote": "デモシステム・任意のパスワードでログイン可能"
+    "demoNote": "担当・上司・財務は任意のパスワード；管理者は 123456"
   },
   "roles": {
     "STAFF": "担当者",
@@ -92,7 +92,8 @@
     "vehicle": "車両申請",
     "notifications": "通知センター",
     "profile": "プロフィール",
-    "schedule": "スケジュール"
+    "schedule": "スケジュール",
+    "admin": "管理画面"
   },
   "dashboard": {
     "greeting": "こんにちは",
@@ -201,6 +202,8 @@
     "approverTitle": "承認者",
     "remarkPlaceholder": "備考を入力（任意）",
     "uploadFailed": "アップロードに失敗しました",
+    "imageLoadFailed": "画像の読み込みに失敗しました",
+    "imageLoadFailedHint": "下のリンクをクリックして新しいウィンドウで開く",
     "invalidAmount": "有効な金額を入力してください",
     "selectSupervisorRequired": "承認先を選択してください",
     "submitFailed": "送信に失敗しました",
@@ -358,6 +361,26 @@
     "maxLength": "{{field}}は{{max}}文字以下で入力してください",
     "invalidAmount": "有効な金額を入力してください",
     "endTimeAfterStart": "終了時間は開始時間より後である必要があります"
+  },
+  "admin": {
+    "title": "管理画面",
+    "subtitle": "ユーザーアカウントと権限の管理",
+    "userManagement": "ユーザー管理",
+    "userManagementDesc": "ユーザーの役割を変更して承認・アクセス権限を調整",
+    "fetchFailed": "ユーザー一覧の取得に失敗しました",
+    "updateFailed": "役割の更新に失敗しました",
+    "accountSettings": "管理者アカウント設定",
+    "accountSettingsDesc": "管理者のユーザー名とパスワードを変更",
+    "currentPassword": "現在のパスワード",
+    "currentPasswordPlaceholder": "現在のパスワードを入力",
+    "newUsername": "新しいユーザー名",
+    "newPassword": "新しいパスワード",
+    "newPasswordPlaceholder": "変更しない場合は空欄",
+    "confirmPasswordPlaceholder": "新しいパスワードを再入力",
+    "updateCredentials": "アカウントを更新",
+    "currentPasswordRequired": "現在のパスワードを入力してください",
+    "enterNewValue": "新しいユーザー名またはパスワードを入力してください",
+    "credentialsUpdated": "アカウントを更新しました"
   },
   "errors": {
     "generic": "エラーが発生しました",

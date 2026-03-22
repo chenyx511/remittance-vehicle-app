@@ -10,6 +10,7 @@ import type {
 } from '@/types';
 import {
   mockUsers,
+  mockUserPasswords,
   mockRemittanceRequests,
   mockVehicleRequests,
   mockVehicles,
@@ -24,7 +25,10 @@ import {
   saveVehicleRequests,
   saveRemittanceRequests,
   saveNotifications,
+  loadAdminCredentials,
+  saveAdminCredentials,
 } from './persistedStore';
+import { verifyPassword, hashPassword } from '@/lib/password';
 import { performUpload } from './uploadUtils';
 
 // 从 localStorage 恢复持久化数据（刷新后保留）
@@ -40,6 +44,14 @@ mockNotifications.push(...initNotifications);
 const initRemittanceRequests = loadRemittanceRequests([...mockRemittanceRequests]);
 mockRemittanceRequests.length = 0;
 mockRemittanceRequests.push(...initRemittanceRequests);
+const savedAdmin = loadAdminCredentials();
+if (savedAdmin) {
+  const adminUser = mockUsers.find((u) => u.id === 'admin');
+  if (adminUser) {
+    adminUser.username = savedAdmin.username;
+    mockUserPasswords['admin'] = savedAdmin.passwordHash;
+  }
+}
 
 // 模拟延迟
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -72,6 +84,11 @@ export const authApi = {
     const user = mockUsers.find((u) => u.username === credentials.username);
     if (!user) {
       throw new Error('用户名或密码错误');
+    }
+    const storedHash = mockUserPasswords[user.id];
+    if (storedHash) {
+      const ok = await verifyPassword(credentials.password, storedHash);
+      if (!ok) throw new Error('用户名或密码错误');
     }
     currentUser = user;
     return {
@@ -142,6 +159,39 @@ export const authApi = {
   },
 
   getCurrentUser: () => currentUser,
+
+  updateCredentials: async (data: {
+    currentPassword: string;
+    newUsername?: string;
+    newPassword?: string;
+  }): Promise<ApiResponse<User>> => {
+    await delay(300);
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      throw new Error('仅管理员可修改账号');
+    }
+    if (currentUser.id !== 'admin') {
+      throw new Error('仅预设管理员可修改账号');
+    }
+    const storedHash = mockUserPasswords['admin'];
+    if (!storedHash) throw new Error('密码校验失败');
+    const ok = await verifyPassword(data.currentPassword, storedHash);
+    if (!ok) throw new Error('当前密码错误');
+    if (data.newUsername?.trim()) {
+      if (mockUsers.some((u) => u.id !== 'admin' && u.username === data.newUsername!.trim())) {
+        throw new Error('用户名已存在');
+      }
+      currentUser.username = data.newUsername.trim();
+    }
+    if (data.newPassword) {
+      const newHash = await hashPassword(data.newPassword);
+      mockUserPasswords['admin'] = newHash;
+    }
+    saveAdminCredentials({
+      username: currentUser.username,
+      passwordHash: mockUserPasswords['admin'],
+    });
+    return { code: 200, message: '更新成功', data: currentUser };
+  },
 };
 
 // 汇款服务
@@ -790,5 +840,16 @@ export const userApi = {
       message: 'success',
       data: supervisors,
     };
+  },
+
+  updateUserRole: async (
+    userId: string,
+    role: User['role'],
+  ): Promise<ApiResponse<User>> => {
+    await delay(300);
+    const user = mockUsers.find((u) => u.id === userId);
+    if (!user) throw new Error('用户不存在');
+    user.role = role;
+    return { code: 200, message: '更新成功', data: user };
   },
 };

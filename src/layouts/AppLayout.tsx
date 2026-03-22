@@ -11,6 +11,7 @@ import {
   Menu,
   ChevronDown,
   Globe,
+  Shield,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -53,6 +54,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { path: '/remittances', labelKey: 'nav.remittance', icon: Banknote },
     { path: '/vehicles', labelKey: 'nav.vehicle', icon: Car },
     { path: '/notifications', labelKey: 'nav.notifications', icon: Bell },
+    ...(user?.role === 'ADMIN'
+      ? [{ path: '/admin', labelKey: 'nav.admin', icon: Shield }]
+      : []),
   ];
 
   useEffect(() => {

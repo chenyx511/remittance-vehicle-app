@@ -9,6 +9,7 @@ import type {
   PaginatedResponse,
 } from '@/types';
 import { supabase } from '@/lib/supabase';
+import { verifyPassword, hashPassword } from '@/lib/password';
 
 /** 仅在被动态导入时使用，此时 supabase 已配置 */
 if (!supabase) throw new Error('Supabase is not configured');
@@ -145,6 +146,11 @@ export const authApi = {
     if (error || !data) {
       throw new Error('用户名或密码错误');
     }
+    const passwordHash = data.password_hash as string | null;
+    if (passwordHash) {
+      const ok = await verifyPassword(credentials.password, passwordHash);
+      if (!ok) throw new Error('用户名或密码错误');
+    }
     const user = toUser(data);
     if (!user) throw new Error('用户名或密码错误');
     currentUser = user;
@@ -174,6 +180,7 @@ export const authApi = {
       .eq('email', data.email)
       .maybeSingle();
     if (byEmail) throw new Error('邮箱已存在');
+    const passwordHash = await hashPassword(data.password);
     const newUser: User = {
       id: String(Date.now()),
       username: data.username,
@@ -186,6 +193,7 @@ export const authApi = {
       id: newUser.id,
       username: newUser.username,
       email: newUser.email,
+      password_hash: passwordHash,
       role: newUser.role,
       department: newUser.department,
     });
@@ -204,6 +212,52 @@ export const authApi = {
   },
 
   getCurrentUser: () => currentUser,
+
+  updateCredentials: async (data: {
+    currentPassword: string;
+    newUsername?: string;
+    newPassword?: string;
+  }): Promise<ApiResponse<User>> => {
+    if (!currentUser || currentUser.role !== 'ADMIN' || currentUser.id !== 'admin') {
+      throw new Error('仅预设管理员可修改账号');
+    }
+    const { data: row, error: fetchErr } = await supabase!
+      .from('users')
+      .select('password_hash')
+      .eq('id', 'admin')
+      .single();
+    if (fetchErr || !row?.password_hash) throw new Error('密码校验失败');
+    const ok = await verifyPassword(data.currentPassword, row.password_hash);
+    if (!ok) throw new Error('当前密码错误');
+    const updates: { username?: string; password_hash?: string } = {};
+    if (data.newUsername?.trim()) {
+      const { data: existing } = await supabase!
+        .from('users')
+        .select('id')
+        .eq('username', data.newUsername.trim())
+        .neq('id', 'admin')
+        .maybeSingle();
+      if (existing) throw new Error('用户名已存在');
+      updates.username = data.newUsername.trim();
+    }
+    if (data.newPassword) {
+      updates.password_hash = await hashPassword(data.newPassword);
+    }
+    if (Object.keys(updates).length === 0) {
+      return { code: 200, message: 'success', data: currentUser };
+    }
+    const { data: updated, error } = await supabase!
+      .from('users')
+      .update(updates)
+      .eq('id', 'admin')
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const user = toUser(updated);
+    if (!user) throw new Error('更新失败');
+    currentUser = user;
+    return { code: 200, message: '更新成功', data: user };
+  },
 };
 
 export const remittanceApi = {
@@ -815,5 +869,21 @@ export const userApi = {
       message: 'success',
       data: (data || []).map((r) => toUser(r)!).filter(Boolean),
     };
+  },
+
+  updateUserRole: async (
+    userId: string,
+    role: User['role'],
+  ): Promise<ApiResponse<User>> => {
+    const { data, error } = await supabase!
+      .from('users')
+      .update({ role })
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const user = toUser(data);
+    if (!user) throw new Error('更新失败');
+    return { code: 200, message: '更新成功', data: user };
   },
 };

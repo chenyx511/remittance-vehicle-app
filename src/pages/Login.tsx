@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Banknote, Loader2, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -41,11 +41,12 @@ export function Login() {
     i18n.changeLanguage(lang);
   };
 
-  // Demo accounts
+  // 演示账号（管理员 admin / 123456 需正确输入密码）
   const demoAccounts = [
-    { name: t('roles.STAFF'), username: '张三' },
-    { name: t('roles.SUPERVISOR'), username: '李四' },
-    { name: t('roles.FINANCE'), username: '王五' },
+    { name: t('roles.STAFF'), username: '张三', password: 'any' },
+    { name: t('roles.SUPERVISOR'), username: '李四', password: 'any' },
+    { name: t('roles.FINANCE'), username: '王五', password: 'any' },
+    { name: t('roles.ADMIN'), username: 'admin', password: '123456' },
   ];
 
   return (
@@ -126,27 +127,17 @@ export function Login() {
               </Button>
             </form>
 
-            {/* Register Link */}
-            <div className="mt-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                {t('auth.noAccount')}{' '}
-                <Link to="/register" className="text-primary hover:underline">
-                  {t('auth.goToRegister')}
-                </Link>
-              </p>
-            </div>
-
             {/* Demo Accounts */}
             <div className="mt-6 pt-6 border-t">
               <p className="text-sm text-muted-foreground mb-3">{t('auth.demoAccounts')}</p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {demoAccounts.map((account) => (
                   <Button
                     key={account.username}
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      setCredentials({ username: account.username, password: 'any' });
+                      setCredentials({ username: account.username, password: account.password });
                     }}
                     disabled={isLoading}
                   >

@@ -15,6 +15,7 @@ import { VehicleManage } from '@/pages/vehicles/VehicleManage';
 import { VehicleSchedule } from '@/pages/vehicles/VehicleSchedule';
 import { Notifications } from '@/pages/Notifications';
 import { Profile } from '@/pages/Profile';
+import { Admin } from '@/pages/Admin';
 import { useAuthStore } from '@/stores/authStore';
 import { useEffect, useState } from 'react';
 
@@ -51,6 +52,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/" replace />;
   }
 
+  return <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { user, isAuthenticated } = useAuthStore();
+  if (!isAuthenticated) return <Navigate to="/" replace />;
+  if (user?.role !== 'ADMIN') return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 
@@ -192,6 +200,18 @@ function App() {
                 <Profile />
               </AppLayout>
             </ProtectedRoute>
+          }
+        />
+
+        {/* Admin Route - ADMIN only */}
+        <Route
+          path="/admin"
+          element={
+            <AdminRoute>
+              <AppLayout>
+                <Admin />
+              </AppLayout>
+            </AdminRoute>
           }
         />
 

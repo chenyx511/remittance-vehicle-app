@@ -1,17 +1,23 @@
 -- 在 Supabase Dashboard → SQL Editor 中执行此脚本
 -- 用于汇款用车审批平台的共享数据存储
 
--- 用户表
+-- 用户表（password_hash 用于管理员等需密码验证的用户，SHA-256）
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
   username TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL UNIQUE,
+  password_hash TEXT,
   role TEXT NOT NULL CHECK (role IN ('STAFF','SUPERVISOR','FINANCE','ADMIN')),
   department TEXT,
   phone TEXT,
   avatar_url TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
+
+-- 为已有表添加 password_hash 列（若表已存在）
+ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+-- 为已有 admin 用户设置默认密码 123456
+UPDATE users SET password_hash = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92' WHERE id = 'admin' AND (password_hash IS NULL OR password_hash = '');
 
 -- 车辆表
 CREATE TABLE IF NOT EXISTS vehicles (
@@ -113,12 +119,13 @@ CREATE POLICY "Allow all for remittance_requests" ON remittance_requests FOR ALL
 CREATE POLICY "Allow all for vehicle_requests" ON vehicle_requests FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for notifications" ON notifications FOR ALL USING (true) WITH CHECK (true);
 
--- 初始用户数据（与 mockData 一致）
-INSERT INTO users (id, username, email, role, department, phone) VALUES
-  ('1', '张三', 'zhangsan@company.com', 'STAFF', '不动产部', '13800138001'),
-  ('2', '李四', 'lisi@company.com', 'SUPERVISOR', '不动产部', '13800138002'),
-  ('3', '王五', 'wangwu@company.com', 'FINANCE', '财务部', '13800138003'),
-  ('4', '赵六', 'zhaoliu@company.com', 'STAFF', '租赁部', '13800138004')
+-- 初始用户数据（预设管理员：admin / 123456，password_hash 为 123456 的 SHA-256）
+INSERT INTO users (id, username, email, password_hash, role, department, phone) VALUES
+  ('admin', 'admin', 'admin@company.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'ADMIN', '管理部', '13800138000'),
+  ('1', '张三', 'zhangsan@company.com', NULL, 'STAFF', '不动产部', '13800138001'),
+  ('2', '李四', 'lisi@company.com', NULL, 'SUPERVISOR', '不动产部', '13800138002'),
+  ('3', '王五', 'wangwu@company.com', NULL, 'FINANCE', '财务部', '13800138003'),
+  ('4', '赵六', 'zhaoliu@company.com', NULL, 'STAFF', '租赁部', '13800138004')
 ON CONFLICT (id) DO NOTHING;
 
 -- 初始车辆数据
