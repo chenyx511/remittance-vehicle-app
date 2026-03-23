@@ -181,6 +181,11 @@ export const authApi = {
     department?: string;
     role: 'STAFF' | 'SUPERVISOR' | 'FINANCE';
   }): Promise<ApiResponse<User>> => {
+    // 仅管理员可创建账号
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      throw new Error('仅管理员可创建账号');
+    }
+
     const { data: byUsername } = await supabase!
       .from('users')
       .select('id')

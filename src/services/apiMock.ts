@@ -123,6 +123,11 @@ export const authApi = {
   }): Promise<ApiResponse<User>> => {
     await delay(500);
 
+    // 仅管理员可创建账号
+    if (!currentUser || currentUser.role !== 'ADMIN') {
+      throw new Error('仅管理员可创建账号');
+    }
+
     // Check if username already exists
     if (mockUsers.find((u) => u.username === data.username)) {
       throw new Error('用户名已存在');
@@ -141,6 +146,7 @@ export const authApi = {
     };
 
     mockUsers.push(newUser);
+    mockUserPasswords[newUser.id] = await hashPassword(data.password);
 
     return {
       code: 200,

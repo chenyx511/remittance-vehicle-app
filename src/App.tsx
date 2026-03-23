@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from '@/components/ui/sonner';
 import { AppLayout } from '@/layouts/AppLayout';
 import { Login } from '@/pages/Login';
-import { Register } from '@/pages/Register';
 import { Dashboard } from '@/pages/Dashboard';
 import { RemittanceList } from '@/pages/remittances/RemittanceList';
 import { RemittanceCreate } from '@/pages/remittances/RemittanceCreate';
@@ -71,7 +70,6 @@ function App() {
       <Routes>
         {/* Public Routes */}
         <Route path="/" element={<Login />} />
-        <Route path="/register" element={<Register />} />
 
         {/* Protected Routes */}
         <Route

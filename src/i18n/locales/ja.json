@@ -380,7 +380,11 @@
     "updateCredentials": "アカウントを更新",
     "currentPasswordRequired": "現在のパスワードを入力してください",
     "enterNewValue": "新しいユーザー名またはパスワードを入力してください",
-    "credentialsUpdated": "アカウントを更新しました"
+    "credentialsUpdated": "アカウントを更新しました",
+    "createUser": "アカウント作成",
+    "createUserDesc": "管理者が新規ユーザーを作成し、権限を割り当てます",
+    "createUserSuccess": "アカウントを作成しました",
+    "createUserFailed": "アカウントの作成に失敗しました"
   },
   "errors": {
     "generic": "エラーが発生しました",

@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Shield, Loader2, KeyRound } from 'lucide-react';
+import { ArrowLeft, Shield, Loader2, KeyRound, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   Select,
   SelectContent,
@@ -15,12 +24,14 @@ import {
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { authApi, userApi } from '@/services/api';
+import { getErrorMessage } from '@/lib/error';
 import { useAuthStore } from '@/stores/authStore';
 import type { User, UserRole } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const ROLES: UserRole[] = ['STAFF', 'SUPERVISOR', 'FINANCE', 'ADMIN'];
+const CREATE_ROLES: UserRole[] = ['STAFF', 'SUPERVISOR', 'FINANCE']; // 管理员创建账号时不可选 ADMIN
 
 export function Admin() {
   const { t } = useTranslation();
@@ -37,6 +48,17 @@ export function Admin() {
     confirmPassword: '',
   });
   const [isUpdatingCreds, setIsUpdatingCreds] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    department: '',
+    role: 'STAFF' as UserRole,
+  });
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -111,6 +133,52 @@ export function Admin() {
       setError(msg || t('admin.updateFailed'));
     } finally {
       setIsUpdatingCreds(false);
+    }
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCreateError(null);
+    if (!createForm.username.trim()) {
+      setCreateError(t('validation.required', { field: t('auth.username') }));
+      return;
+    }
+    if (!createForm.email.trim()) {
+      setCreateError(t('validation.required', { field: t('auth.email') }));
+      return;
+    }
+    if (!createForm.password) {
+      setCreateError(t('validation.required', { field: t('auth.password') }));
+      return;
+    }
+    if (createForm.password !== createForm.confirmPassword) {
+      setCreateError(t('auth.passwordMismatch'));
+      return;
+    }
+    setIsCreating(true);
+    try {
+      await authApi.register({
+        username: createForm.username.trim(),
+        email: createForm.email.trim(),
+        password: createForm.password,
+        department: createForm.department.trim() || undefined,
+        role: createForm.role as 'STAFF' | 'SUPERVISOR' | 'FINANCE',
+      });
+      toast.success(t('admin.createUserSuccess'));
+      setCreateDialogOpen(false);
+      setCreateForm({
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: '',
+        department: '',
+        role: 'STAFF',
+      });
+      fetchUsers();
+    } catch (e) {
+      setCreateError(getErrorMessage(e) || t('admin.createUserFailed'));
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -214,8 +282,133 @@ export function Admin() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('admin.userManagement')}</CardTitle>
-          <CardDescription>{t('admin.userManagementDesc')}</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>{t('admin.userManagement')}</CardTitle>
+              <CardDescription>{t('admin.userManagementDesc')}</CardDescription>
+            </div>
+            <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm">
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  {t('admin.createUser')}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{t('admin.createUser')}</DialogTitle>
+                  <DialogDescription>{t('admin.createUserDesc')}</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateUser} className="space-y-4">
+                  {createError && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{createError}</AlertDescription>
+                    </Alert>
+                  )}
+                  <div className="space-y-2">
+                    <Label htmlFor="create-username">{t('auth.username')} *</Label>
+                    <Input
+                      id="create-username"
+                      value={createForm.username}
+                      onChange={(e) =>
+                        setCreateForm((p) => ({ ...p, username: e.target.value }))
+                      }
+                      placeholder={t('auth.username')}
+                      disabled={isCreating}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-email">{t('auth.email')} *</Label>
+                    <Input
+                      id="create-email"
+                      type="email"
+                      value={createForm.email}
+                      onChange={(e) =>
+                        setCreateForm((p) => ({ ...p, email: e.target.value }))
+                      }
+                      placeholder={t('auth.email')}
+                      disabled={isCreating}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="create-password">{t('auth.password')} *</Label>
+                      <Input
+                        id="create-password"
+                        type="password"
+                        value={createForm.password}
+                        onChange={(e) =>
+                          setCreateForm((p) => ({ ...p, password: e.target.value }))
+                        }
+                        placeholder={t('auth.password')}
+                        disabled={isCreating}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="create-confirm">{t('auth.confirmPassword')} *</Label>
+                      <Input
+                        id="create-confirm"
+                        type="password"
+                        value={createForm.confirmPassword}
+                        onChange={(e) =>
+                          setCreateForm((p) => ({ ...p, confirmPassword: e.target.value }))
+                        }
+                        placeholder={t('auth.confirmPassword')}
+                        disabled={isCreating}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-department">{t('auth.department')}</Label>
+                    <Input
+                      id="create-department"
+                      value={createForm.department}
+                      onChange={(e) =>
+                        setCreateForm((p) => ({ ...p, department: e.target.value }))
+                      }
+                      placeholder={t('auth.department')}
+                      disabled={isCreating}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="create-role">{t('auth.role')} *</Label>
+                    <Select
+                      value={createForm.role}
+                      onValueChange={(v) =>
+                        setCreateForm((p) => ({ ...p, role: v as UserRole }))
+                      }
+                      disabled={isCreating}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {CREATE_ROLES.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {t(`roles.${r}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCreateDialogOpen(false)}
+                      disabled={isCreating}
+                    >
+                      {t('common.cancel')}
+                    </Button>
+                    <Button type="submit" disabled={isCreating}>
+                      {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      {t('admin.createUser')}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
