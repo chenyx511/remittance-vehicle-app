@@ -73,10 +73,9 @@ export function Admin() {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [profileDrafts, setProfileDrafts] = useState<Record<string, { department: string; position: string }>>({});
-  const [, setPositionOptions] = useState<string[]>([]);
+  const [positionOptions, setPositionOptions] = useState<string[]>([]);
   const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
   const [deleteTargetPosition, setDeleteTargetPosition] = useState<string | null>(null);
-  const protectedPositions = new Set([ROLE_POSITION_MAP.ADMIN, '管理员', '管理者']);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -268,16 +267,10 @@ export function Admin() {
   const handleDeletePositionOption = async (option: string): Promise<boolean> => {
     const targetOption = option.trim();
     if (!targetOption) return false;
-    if (protectedPositions.has(targetOption)) {
-      setError(t('admin.protectedPositionCannotDelete'));
-      return false;
-    }
     setIsSaving(true);
     setError(null);
     try {
-      const affected = users.filter(
-        (u) => u.role !== 'ADMIN' && (u.position || '').trim() === targetOption,
-      );
+      const affected = users.filter((u) => (u.position || '').trim() === targetOption);
       for (const u of affected) {
         await userApi.updateUserProfile(u.id, {
           department: u.department,
@@ -286,7 +279,7 @@ export function Admin() {
       }
       setUsers((prev) =>
         prev.map((u) =>
-          u.role !== 'ADMIN' && (u.position || '').trim() === targetOption
+          (u.position || '').trim() === targetOption
             ? { ...u, position: undefined }
             : u,
         ),
@@ -686,6 +679,10 @@ export function Admin() {
           ) : (
             <div className="space-y-4">
               {users.map((user) => {
+                const currentDraftPosition = (profileDrafts[user.id]?.position ?? '').trim();
+                const selectedPosition = positionOptions.includes(currentDraftPosition)
+                  ? currentDraftPosition
+                  : undefined;
                 return (
                   <div
                     key={user.id}
@@ -706,7 +703,7 @@ export function Admin() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
                     <div className="space-y-1">
                       <Label htmlFor={`dept-${user.id}`}>{t('auth.department')}</Label>
                       <Input
@@ -726,6 +723,39 @@ export function Admin() {
                         disabled={isSaving}
                         placeholder={t('admin.positionPlaceholder')}
                       />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>{t('admin.position')}</Label>
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={selectedPosition}
+                          onValueChange={(value) => handleProfileChange(user.id, 'position', value)}
+                          disabled={isSaving || positionOptions.length === 0}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('admin.selectPositionOption')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {positionOptions.map((position) => (
+                              <SelectItem key={position} value={position}>
+                                {position}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {selectedPosition && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setDeleteTargetPosition(selectedPosition)}
+                            disabled={isSaving}
+                            title={t('admin.deletePositionOption')}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     <div className="space-y-1">
                       <Label>{t('auth.role')}</Label>
