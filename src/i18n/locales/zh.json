@@ -428,7 +428,9 @@
     },
     "deletePositionOption": "删除该岗位选项",
     "deleteProtectedUser": "管理员账号受保护，不能删除",
-    "confirmDeleteUser": "确定删除账号 {{username}} 吗？该操作不可恢复。"
+    "confirmDeleteUser": "确定删除账号 {{username}} 吗？该操作不可恢复。",
+    "positionOptions": "岗位候选",
+    "positionOptionDeleted": "岗位候选已删除并同步清理"
   },
   "errors": {
     "generic": "发生错误",

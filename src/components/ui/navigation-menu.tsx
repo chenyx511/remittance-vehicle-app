@@ -1,4 +1,5 @@
 import * as React from 'react';
+/* eslint-disable react-refresh/only-export-components */
 import * as NavigationMenuPrimitive from '@radix-ui/react-navigation-menu';
 import { cva } from 'class-variance-authority';
 import { ChevronDownIcon } from 'lucide-react';
@@ -148,7 +149,6 @@ function NavigationMenuIndicator({
   );
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 export {
   NavigationMenu,
   NavigationMenuList,

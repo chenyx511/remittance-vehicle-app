@@ -32,7 +32,6 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (hasHydrated) return;
     const unsub = useAuthStore.persist?.onFinishHydration?.(() => setHasHydrated(true));
-    if (useAuthStore.persist?.hasHydrated?.()) setHasHydrated(true);
     return () => (typeof unsub === 'function' ? unsub() : undefined);
   }, [hasHydrated]);
 

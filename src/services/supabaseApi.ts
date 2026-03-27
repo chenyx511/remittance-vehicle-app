@@ -11,6 +11,7 @@ import type {
 } from '@/types';
 import { supabase } from '@/lib/supabase';
 import { verifyPassword, hashPassword } from '@/lib/password';
+import { hasPermission, getDefaultPermissionsByRole } from '@/lib/permissions';
 
 /** 仅在被动态导入时使用，此时 supabase 已配置 */
 if (!supabase) throw new Error('Supabase is not configured');
@@ -20,6 +21,11 @@ let currentUser: User | null = null;
 export const setMockCurrentUser = (user: User | null) => {
   currentUser = user;
 };
+
+function requirePermission(permission: OperationPermission, deniedMessage = '无权限执行该操作') {
+  if (!currentUser) throw new Error('未登录');
+  if (!hasPermission(currentUser, permission)) throw new Error(deniedMessage);
+}
 
 /** 申请可见性：担当只能看自己的，上司/财务/管理员可看全部 */
 function canViewRemittance(item: RemittanceRequest): boolean {
@@ -307,7 +313,7 @@ export const remittanceApi = {
     const { data: rows, error } = await q;
     if (error) throw new Error(error.message);
     const users = await fetchUsersMap();
-    let list = (rows || []).map((r) => toRemittanceRequest(r, users)).filter(canViewRemittance);
+    const list = (rows || []).map((r) => toRemittanceRequest(r, users)).filter(canViewRemittance);
     const page = params?.page || 1;
     const pageSize = params?.pageSize || 10;
     const total = list.length;
@@ -384,6 +390,7 @@ export const remittanceApi = {
   },
 
   approve: async (id: string, comment?: string): Promise<ApiResponse<RemittanceRequest>> => {
+    requirePermission('REMITTANCE_APPROVE', '无汇款审批权限');
     const now = new Date().toISOString();
     const { data: existing, error: fetchErr } = await supabase!
       .from('remittance_requests')
@@ -391,6 +398,7 @@ export const remittanceApi = {
       .eq('id', id)
       .single();
     if (fetchErr || !existing) throw new Error('申请不存在');
+    if (existing.status !== 'PENDING') throw new Error('当前状态不可审批');
     const { error } = await supabase!
       .from('remittance_requests')
       .update({
@@ -416,6 +424,7 @@ export const remittanceApi = {
   },
 
   reject: async (id: string, comment?: string): Promise<ApiResponse<RemittanceRequest>> => {
+    requirePermission('REMITTANCE_APPROVE', '无汇款审批权限');
     const now = new Date().toISOString();
     const { data: existing, error: fetchErr } = await supabase!
       .from('remittance_requests')
@@ -423,6 +432,7 @@ export const remittanceApi = {
       .eq('id', id)
       .single();
     if (fetchErr || !existing) throw new Error('申请不存在');
+    if (existing.status !== 'PENDING') throw new Error('当前状态不可驳回');
     const { error } = await supabase!
       .from('remittance_requests')
       .update({
@@ -451,6 +461,7 @@ export const remittanceApi = {
     id: string,
     data: { remittanceProofUrl?: string; remittanceDate?: string; comment?: string }
   ): Promise<ApiResponse<RemittanceRequest>> => {
+    requirePermission('REMITTANCE_PROCESS', '无汇款处理权限');
     const now = new Date().toISOString();
     const { data: existing, error: fetchErr } = await supabase!
       .from('remittance_requests')
@@ -458,6 +469,7 @@ export const remittanceApi = {
       .eq('id', id)
       .single();
     if (fetchErr || !existing) throw new Error('申请不存在');
+    if (existing.status !== 'SUPERVISOR_APPROVED') throw new Error('当前状态不可完成汇款');
     const { error } = await supabase!
       .from('remittance_requests')
       .update({
@@ -590,6 +602,7 @@ export const vehicleApi = {
   },
 
   approve: async (id: string, comment?: string): Promise<ApiResponse<VehicleRequest>> => {
+    requirePermission('VEHICLE_APPROVE', '无用车审批权限');
     const now = new Date().toISOString();
     const { data: existing, error: fetchErr } = await supabase!
       .from('vehicle_requests')
@@ -597,6 +610,7 @@ export const vehicleApi = {
       .eq('id', id)
       .single();
     if (fetchErr || !existing) throw new Error('申请不存在');
+    if (existing.status !== 'PENDING') throw new Error('当前状态不可审批');
     const { error } = await supabase!
       .from('vehicle_requests')
       .update({
@@ -622,6 +636,7 @@ export const vehicleApi = {
   },
 
   reject: async (id: string, comment?: string): Promise<ApiResponse<VehicleRequest>> => {
+    requirePermission('VEHICLE_APPROVE', '无用车审批权限');
     const now = new Date().toISOString();
     const { data: existing, error: fetchErr } = await supabase!
       .from('vehicle_requests')
@@ -629,6 +644,7 @@ export const vehicleApi = {
       .eq('id', id)
       .single();
     if (fetchErr || !existing) throw new Error('申请不存在');
+    if (existing.status !== 'PENDING') throw new Error('当前状态不可驳回');
     const { error } = await supabase!
       .from('vehicle_requests')
       .update({
@@ -654,6 +670,7 @@ export const vehicleApi = {
   },
 
   start: async (id: string, mileageStart?: number): Promise<ApiResponse<VehicleRequest>> => {
+    requirePermission('VEHICLE_USE', '无用车执行权限');
     const now = new Date().toISOString();
     const { data: existing, error: fetchErr } = await supabase!
       .from('vehicle_requests')
@@ -661,6 +678,8 @@ export const vehicleApi = {
       .eq('id', id)
       .single();
     if (fetchErr || !existing) throw new Error('申请不存在');
+    if (String(existing.applicant_id) !== currentUser?.id) throw new Error('仅申请人可开始用车');
+    if (existing.status !== 'APPROVED') throw new Error('当前状态不可开始用车');
     const { error } = await supabase!
       .from('vehicle_requests')
       .update({
@@ -679,6 +698,7 @@ export const vehicleApi = {
   },
 
   complete: async (id: string, mileageEnd?: number): Promise<ApiResponse<VehicleRequest>> => {
+    requirePermission('VEHICLE_USE', '无用车执行权限');
     const now = new Date().toISOString();
     const { data: existing, error: fetchErr } = await supabase!
       .from('vehicle_requests')
@@ -686,6 +706,8 @@ export const vehicleApi = {
       .eq('id', id)
       .single();
     if (fetchErr || !existing) throw new Error('申请不存在');
+    if (String(existing.applicant_id) !== currentUser?.id) throw new Error('仅申请人可完成用车');
+    if (existing.status !== 'IN_USE') throw new Error('当前状态不可完成用车');
     const { error } = await supabase!
       .from('vehicle_requests')
       .update({
@@ -886,6 +908,7 @@ export const notificationApi = {
 
 export const userApi = {
   getList: async (): Promise<ApiResponse<User[]>> => {
+    requirePermission('USER_MANAGE', '无用户管理权限');
     const users = await fetchUsersMap();
     return { code: 200, message: 'success', data: Array.from(users.values()) };
   },
@@ -906,9 +929,11 @@ export const userApi = {
     userId: string,
     role: User['role'],
   ): Promise<ApiResponse<User>> => {
+    requirePermission('USER_MANAGE', '无用户管理权限');
+    const defaultPermissions = getDefaultPermissionsByRole(role);
     const { data, error } = await supabase!
       .from('users')
-      .update({ role })
+      .update({ role, permissions: defaultPermissions })
       .eq('id', userId)
       .select()
       .single();
@@ -922,6 +947,7 @@ export const userApi = {
     userId: string,
     data: { department?: string; position?: string },
   ): Promise<ApiResponse<User>> => {
+    requirePermission('USER_MANAGE', '无用户管理权限');
     const { data: updated, error } = await supabase!
       .from('users')
       .update({
@@ -941,6 +967,7 @@ export const userApi = {
     userId: string,
     permissions: OperationPermission[],
   ): Promise<ApiResponse<User>> => {
+    requirePermission('USER_MANAGE', '无用户管理权限');
     const { data: updated, error } = await supabase!
       .from('users')
       .update({ permissions })
@@ -954,6 +981,7 @@ export const userApi = {
   },
 
   deactivateUser: async (userId: string): Promise<ApiResponse<User>> => {
+    requirePermission('USER_MANAGE', '无用户管理权限');
     if (userId === 'admin') throw new Error('不可停用预设管理员');
     const { data: updated, error } = await supabase!
       .from('users')
@@ -968,6 +996,7 @@ export const userApi = {
   },
 
   reactivateUser: async (userId: string): Promise<ApiResponse<User>> => {
+    requirePermission('USER_MANAGE', '无用户管理权限');
     const { data: updated, error } = await supabase!
       .from('users')
       .update({ employment_status: 'ACTIVE' })
@@ -981,6 +1010,7 @@ export const userApi = {
   },
 
   deleteUser: async (userId: string): Promise<ApiResponse<null>> => {
+    requirePermission('USER_MANAGE', '无用户管理权限');
     const { data: target, error: fetchErr } = await supabase!
       .from('users')
       .select('id, role')

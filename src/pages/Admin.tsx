@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Shield, Loader2, KeyRound, UserPlus, Save, UserX, RotateCcw, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -76,11 +76,7 @@ export function Admin() {
   const [positionOptions, setPositionOptions] = useState<string[]>([]);
   const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -94,10 +90,7 @@ export function Admin() {
       setPositionOptions(
         Array.from(
           new Set(
-            [
-              ...Object.values(ROLE_POSITION_MAP),
-              ...res.data.map((u) => (u.position || '').trim()).filter(Boolean),
-            ],
+            res.data.map((u) => (u.position || '').trim()).filter(Boolean),
           ),
         ),
       );
@@ -111,18 +104,24 @@ export function Admin() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleRoleChange = async (userId: string, role: UserRole) => {
     setIsSaving(true);
     setError(null);
     try {
-      await userApi.updateUserRole(userId, role);
-      const defaultPermissions = getDefaultPermissionsByRole(role);
+      const res = await userApi.updateUserRole(userId, role);
+      const nextPermissions = res.data.permissions && res.data.permissions.length > 0
+        ? res.data.permissions
+        : getDefaultPermissionsByRole(role);
       setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, role } : u)),
+        prev.map((u) => (u.id === userId ? { ...u, role, permissions: nextPermissions } : u)),
       );
-      setPermissionDrafts((prev) => ({ ...prev, [userId]: defaultPermissions }));
+      setPermissionDrafts((prev) => ({ ...prev, [userId]: nextPermissions }));
       const currentPosition = profileDrafts[userId]?.position?.trim();
       if (!currentPosition || Object.values(ROLE_POSITION_MAP).includes(currentPosition)) {
         setProfileDrafts((prev) => ({
@@ -260,16 +259,41 @@ export function Admin() {
     }
   };
 
-  const handleDeletePositionOption = (option: string) => {
-    setPositionOptions((prev) => prev.filter((v) => v !== option));
-    setProfileDrafts((prev) =>
-      Object.fromEntries(
-        Object.entries(prev).map(([uid, draft]) => [
-          uid,
-          draft.position === option ? { ...draft, position: '' } : draft,
-        ]),
-      ),
-    );
+  const handleDeletePositionOption = async (option: string) => {
+    const targetOption = option.trim();
+    if (!targetOption) return;
+    setIsSaving(true);
+    setError(null);
+    try {
+      const affected = users.filter((u) => (u.position || '').trim() === targetOption);
+      for (const u of affected) {
+        await userApi.updateUserProfile(u.id, {
+          department: u.department,
+          position: undefined,
+        });
+      }
+      setUsers((prev) =>
+        prev.map((u) =>
+          (u.position || '').trim() === targetOption
+            ? { ...u, position: undefined }
+            : u,
+        ),
+      );
+      setProfileDrafts((prev) =>
+        Object.fromEntries(
+          Object.entries(prev).map(([uid, draft]) => [
+            uid,
+            draft.position.trim() === targetOption ? { ...draft, position: '' } : draft,
+          ]),
+        ),
+      );
+      setPositionOptions((prev) => prev.filter((v) => v !== targetOption));
+      toast.success(t('admin.positionOptionDeleted'));
+    } catch (e) {
+      setError(getErrorMessage(e) || t('admin.updateFailed'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const isPresetAdmin = currentUser?.id === 'admin' && currentUser?.role === 'ADMIN';
@@ -659,9 +683,15 @@ export function Admin() {
                       </div>
                       <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                     </div>
-                    <div className="flex items-center gap-2 w-56">
+                    <div className="flex flex-col gap-1 w-56">
+                      <Label className="text-xs text-muted-foreground">{t('admin.positionOptions')}</Label>
+                      <div className="flex items-center gap-2">
                       <Select
-                        value={profileDrafts[user.id]?.position ?? ''}
+                        value={
+                          positionOptions.includes(profileDrafts[user.id]?.position ?? '')
+                            ? (profileDrafts[user.id]?.position ?? '')
+                            : ''
+                        }
                         onValueChange={(v) => handleProfileChange(user.id, 'position', v)}
                         disabled={isSaving}
                       >
@@ -687,6 +717,7 @@ export function Admin() {
                       >
                         <X className="h-4 w-4" />
                       </Button>
+                      </div>
                     </div>
                   </div>
 

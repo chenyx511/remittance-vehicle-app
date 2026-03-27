@@ -31,6 +31,7 @@ import {
 } from './persistedStore';
 import { verifyPassword, hashPassword } from '@/lib/password';
 import { performUpload } from './uploadUtils';
+import { hasPermission, getDefaultPermissionsByRole } from '@/lib/permissions';
 
 // 从 localStorage 恢复持久化数据（刷新后保留）
 const initVehicles = loadVehicles([...mockVehicles]);
@@ -64,6 +65,11 @@ let currentUser: User | null = null;
 export const setMockCurrentUser = (user: User | null) => {
   currentUser = user;
 };
+
+function requirePermission(permission: OperationPermission, deniedMessage = '无权限执行该操作') {
+  if (!currentUser) throw new Error('未登录');
+  if (!hasPermission(currentUser, permission)) throw new Error(deniedMessage);
+}
 
 /** 申请可见性：担当只能看自己的，上司/财务/管理员可看全部 */
 function canViewRemittance(item: RemittanceRequest): boolean {
@@ -332,10 +338,12 @@ export const remittanceApi = {
 
   approve: async (id: string, comment?: string): Promise<ApiResponse<RemittanceRequest>> => {
     await delay(300);
+    requirePermission('REMITTANCE_APPROVE', '无汇款审批权限');
     const item = mockRemittanceRequests.find((r) => r.id === id);
     if (!item) {
       throw new Error('申请不存在');
     }
+    if (item.status !== 'PENDING') throw new Error('当前状态不可审批');
     item.status = 'SUPERVISOR_APPROVED';
     item.supervisorComment = comment;
     item.supervisorApprovedAt = new Date().toISOString();
@@ -362,10 +370,12 @@ export const remittanceApi = {
 
   reject: async (id: string, comment?: string): Promise<ApiResponse<RemittanceRequest>> => {
     await delay(300);
+    requirePermission('REMITTANCE_APPROVE', '无汇款审批权限');
     const item = mockRemittanceRequests.find((r) => r.id === id);
     if (!item) {
       throw new Error('申请不存在');
     }
+    if (item.status !== 'PENDING') throw new Error('当前状态不可驳回');
     item.status = 'REJECTED';
     item.supervisorComment = comment;
     item.supervisorApprovedAt = new Date().toISOString();
@@ -395,10 +405,12 @@ export const remittanceApi = {
     data: { remittanceProofUrl?: string; remittanceDate?: string; comment?: string },
   ): Promise<ApiResponse<RemittanceRequest>> => {
     await delay(300);
+    requirePermission('REMITTANCE_PROCESS', '无汇款处理权限');
     const item = mockRemittanceRequests.find((r) => r.id === id);
     if (!item) {
       throw new Error('申请不存在');
     }
+    if (item.status !== 'SUPERVISOR_APPROVED') throw new Error('当前状态不可完成汇款');
     item.status = 'COMPLETED';
     item.remittanceProofUrl = data.remittanceProofUrl;
     item.remittanceDate = data.remittanceDate;
@@ -539,10 +551,12 @@ export const vehicleApi = {
 
   approve: async (id: string, comment?: string): Promise<ApiResponse<VehicleRequest>> => {
     await delay(300);
+    requirePermission('VEHICLE_APPROVE', '无用车审批权限');
     const item = mockVehicleRequests.find((r) => r.id === id);
     if (!item) {
       throw new Error('申请不存在');
     }
+    if (item.status !== 'PENDING') throw new Error('当前状态不可审批');
     item.status = 'APPROVED';
     item.approverComment = comment;
     item.approvedAt = new Date().toISOString();
@@ -569,10 +583,12 @@ export const vehicleApi = {
 
   reject: async (id: string, comment?: string): Promise<ApiResponse<VehicleRequest>> => {
     await delay(300);
+    requirePermission('VEHICLE_APPROVE', '无用车审批权限');
     const item = mockVehicleRequests.find((r) => r.id === id);
     if (!item) {
       throw new Error('申请不存在');
     }
+    if (item.status !== 'PENDING') throw new Error('当前状态不可驳回');
     item.status = 'REJECTED';
     item.approverComment = comment;
     item.approvedAt = new Date().toISOString();
@@ -599,10 +615,13 @@ export const vehicleApi = {
 
   start: async (id: string, mileageStart?: number): Promise<ApiResponse<VehicleRequest>> => {
     await delay(300);
+    requirePermission('VEHICLE_USE', '无用车执行权限');
     const item = mockVehicleRequests.find((r) => r.id === id);
     if (!item) {
       throw new Error('申请不存在');
     }
+    if (item.applicantId !== currentUser?.id) throw new Error('仅申请人可开始用车');
+    if (item.status !== 'APPROVED') throw new Error('当前状态不可开始用车');
     item.status = 'IN_USE';
     item.actualStartTime = new Date().toISOString();
     item.mileageStart = mileageStart;
@@ -620,10 +639,13 @@ export const vehicleApi = {
 
   complete: async (id: string, mileageEnd?: number): Promise<ApiResponse<VehicleRequest>> => {
     await delay(300);
+    requirePermission('VEHICLE_USE', '无用车执行权限');
     const item = mockVehicleRequests.find((r) => r.id === id);
     if (!item) {
       throw new Error('申请不存在');
     }
+    if (item.applicantId !== currentUser?.id) throw new Error('仅申请人可完成用车');
+    if (item.status !== 'IN_USE') throw new Error('当前状态不可完成用车');
     item.status = 'COMPLETED';
     item.actualEndTime = new Date().toISOString();
     item.mileageEnd = mileageEnd;
@@ -857,6 +879,7 @@ export const notificationApi = {
 export const userApi = {
   getList: async (): Promise<ApiResponse<User[]>> => {
     await delay(300);
+    requirePermission('USER_MANAGE', '无用户管理权限');
     return {
       code: 200,
       message: 'success',
@@ -879,9 +902,11 @@ export const userApi = {
     role: User['role'],
   ): Promise<ApiResponse<User>> => {
     await delay(300);
+    requirePermission('USER_MANAGE', '无用户管理权限');
     const user = mockUsers.find((u) => u.id === userId);
     if (!user) throw new Error('用户不存在');
     user.role = role;
+    user.permissions = [...getDefaultPermissionsByRole(role)];
     return { code: 200, message: '更新成功', data: user };
   },
 
@@ -890,6 +915,7 @@ export const userApi = {
     data: { department?: string; position?: string },
   ): Promise<ApiResponse<User>> => {
     await delay(300);
+    requirePermission('USER_MANAGE', '无用户管理权限');
     const user = mockUsers.find((u) => u.id === userId);
     if (!user) throw new Error('用户不存在');
     user.department = data.department;
@@ -902,6 +928,7 @@ export const userApi = {
     permissions: OperationPermission[],
   ): Promise<ApiResponse<User>> => {
     await delay(300);
+    requirePermission('USER_MANAGE', '无用户管理权限');
     const user = mockUsers.find((u) => u.id === userId);
     if (!user) throw new Error('用户不存在');
     user.permissions = [...permissions];
@@ -910,6 +937,7 @@ export const userApi = {
 
   deactivateUser: async (userId: string): Promise<ApiResponse<User>> => {
     await delay(300);
+    requirePermission('USER_MANAGE', '无用户管理权限');
     const user = mockUsers.find((u) => u.id === userId);
     if (!user) throw new Error('用户不存在');
     if (user.id === 'admin') throw new Error('不可停用预设管理员');
@@ -919,6 +947,7 @@ export const userApi = {
 
   reactivateUser: async (userId: string): Promise<ApiResponse<User>> => {
     await delay(300);
+    requirePermission('USER_MANAGE', '无用户管理权限');
     const user = mockUsers.find((u) => u.id === userId);
     if (!user) throw new Error('用户不存在');
     user.employmentStatus = 'ACTIVE';
@@ -927,6 +956,7 @@ export const userApi = {
 
   deleteUser: async (userId: string): Promise<ApiResponse<null>> => {
     await delay(300);
+    requirePermission('USER_MANAGE', '无用户管理权限');
     const target = mockUsers.find((u) => u.id === userId);
     if (!target) throw new Error('用户不存在');
     if (target.role === 'ADMIN') throw new Error('管理员账号受保护，无法删除');
