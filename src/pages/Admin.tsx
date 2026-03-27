@@ -142,12 +142,6 @@ export function Admin() {
   };
 
   const handleProfileChange = (userId: string, key: 'department' | 'position', value: string) => {
-    if (key === 'position') {
-      const trimmed = value.trim();
-      if (trimmed) {
-        setPositionOptions((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
-      }
-    }
     setProfileDrafts((prev) => ({
       ...prev,
       [userId]: {
@@ -237,18 +231,22 @@ export function Admin() {
     try {
       const draft = profileDrafts[userId] || { department: '', position: '' };
       const permissions = permissionDrafts[userId] ?? [];
+      const finalPosition = draft.position.trim();
       await userApi.updateUserProfile(userId, {
         department: draft.department.trim() || undefined,
-        position: draft.position.trim() || undefined,
+        position: finalPosition || undefined,
       });
       await userApi.updateUserPermissions(userId, permissions);
+      if (finalPosition) {
+        setPositionOptions((prev) => (prev.includes(finalPosition) ? prev : [...prev, finalPosition]));
+      }
       setUsers((prev) =>
         prev.map((u) =>
           u.id === userId
             ? {
                 ...u,
                 department: draft.department.trim() || undefined,
-                position: draft.position.trim() || undefined,
+                position: finalPosition || undefined,
                 permissions,
               }
             : u,
