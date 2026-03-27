@@ -427,6 +427,9 @@
       "USER_MANAGE": "用户管理"
     },
     "deletePositionOption": "删除该岗位选项",
+    "selectPositionOption": "从候选中选择岗位",
+    "noPositionOptions": "暂无岗位候选",
+    "confirmDeletePositionOption": "确定删除岗位候选「{{position}}」吗？该岗位会从所有账号中清空。",
     "deleteProtectedUser": "管理员账号受保护，不能删除",
     "confirmDeleteUser": "确定删除账号 {{username}} 吗？该操作不可恢复。",
     "positionOptions": "岗位候选",

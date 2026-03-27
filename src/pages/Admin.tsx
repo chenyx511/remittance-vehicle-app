@@ -75,6 +75,7 @@ export function Admin() {
   const [profileDrafts, setProfileDrafts] = useState<Record<string, { department: string; position: string }>>({});
   const [positionOptions, setPositionOptions] = useState<string[]>([]);
   const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
+  const [deleteTargetPosition, setDeleteTargetPosition] = useState<string | null>(null);
   const protectedPositions = new Set([ROLE_POSITION_MAP.ADMIN, '管理员', '管理者']);
 
   const fetchUsers = useCallback(async () => {
@@ -93,7 +94,7 @@ export function Admin() {
           new Set(
             res.data.map((u) => (u.position || '').trim()).filter(Boolean),
           ),
-        ),
+        ).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN')),
       );
       setPermissionDrafts(
         Object.fromEntries(
@@ -238,7 +239,11 @@ export function Admin() {
       });
       await userApi.updateUserPermissions(userId, permissions);
       if (finalPosition) {
-        setPositionOptions((prev) => (prev.includes(finalPosition) ? prev : [...prev, finalPosition]));
+        setPositionOptions((prev) =>
+          prev.includes(finalPosition)
+            ? prev
+            : [...prev, finalPosition].sort((a, b) => a.localeCompare(b, 'zh-Hans-CN')),
+        );
       }
       setUsers((prev) =>
         prev.map((u) =>
@@ -260,12 +265,12 @@ export function Admin() {
     }
   };
 
-  const handleDeletePositionOption = async (option: string) => {
+  const handleDeletePositionOption = async (option: string): Promise<boolean> => {
     const targetOption = option.trim();
-    if (!targetOption) return;
+    if (!targetOption) return false;
     if (protectedPositions.has(targetOption)) {
       setError(t('admin.protectedPositionCannotDelete'));
-      return;
+      return false;
     }
     setIsSaving(true);
     setError(null);
@@ -296,11 +301,19 @@ export function Admin() {
       );
       setPositionOptions((prev) => prev.filter((v) => v !== targetOption));
       toast.success(t('admin.positionOptionDeleted'));
+      return true;
     } catch (e) {
       setError(getErrorMessage(e) || t('admin.updateFailed'));
+      return false;
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleConfirmDeletePositionOption = async () => {
+    if (!deleteTargetPosition) return;
+    const deleted = await handleDeletePositionOption(deleteTargetPosition);
+    if (deleted) setDeleteTargetPosition(null);
   };
 
   const isPresetAdmin = currentUser?.id === 'admin' && currentUser?.role === 'ADMIN';
@@ -672,11 +685,14 @@ export function Admin() {
             </div>
           ) : (
             <div className="space-y-4">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="p-4 rounded-lg border bg-card space-y-3"
-                >
+              {users.map((user) => {
+                const draftPosition = (profileDrafts[user.id]?.position ?? '').trim();
+                const positionSelectValue = positionOptions.includes(draftPosition) ? draftPosition : undefined;
+                return (
+                  <div
+                    key={user.id}
+                    className="p-4 rounded-lg border bg-card space-y-3"
+                  >
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
@@ -712,6 +728,43 @@ export function Admin() {
                         disabled={isSaving}
                         placeholder={t('admin.positionPlaceholder')}
                       />
+                      <div className="flex items-center gap-2 pt-1">
+                        <Select
+                          value={positionSelectValue}
+                          onValueChange={(value) => handleProfileChange(user.id, 'position', value)}
+                          disabled={isSaving || positionOptions.length === 0}
+                        >
+                          <SelectTrigger className="h-8 text-xs">
+                            <SelectValue
+                              placeholder={
+                                positionOptions.length > 0
+                                  ? t('admin.selectPositionOption')
+                                  : t('admin.noPositionOptions')
+                              }
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {positionOptions.map((position) => (
+                              <SelectItem key={position} value={position}>
+                                {position}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {draftPosition && !protectedPositions.has(draftPosition) && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-8"
+                            onClick={() => setDeleteTargetPosition(draftPosition)}
+                            disabled={isSaving}
+                          >
+                            <Trash2 className="h-3 w-3 mr-1" />
+                            {t('admin.deletePositionOption')}
+                          </Button>
+                        )}
+                      </div>
                       <div className="flex flex-wrap gap-2 pt-1">
                         {positionOptions.map((position) => (
                           <div
@@ -730,7 +783,7 @@ export function Admin() {
                               <button
                                 type="button"
                                 className="text-muted-foreground hover:text-destructive"
-                                onClick={() => handleDeletePositionOption(position)}
+                                onClick={() => setDeleteTargetPosition(position)}
                                 disabled={isSaving}
                                 title={t('admin.deletePositionOption')}
                               >
@@ -824,8 +877,9 @@ export function Admin() {
                       </Button>
                     )}
                   </div>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -854,6 +908,41 @@ export function Admin() {
               type="button"
               variant="destructive"
               onClick={handleConfirmDelete}
+              disabled={isSaving}
+            >
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t('common.delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={!!deleteTargetPosition}
+        onOpenChange={(open) => !open && setDeleteTargetPosition(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('admin.deletePositionOption')}</DialogTitle>
+            <DialogDescription>
+              {deleteTargetPosition
+                ? t('admin.confirmDeletePositionOption', { position: deleteTargetPosition })
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteTargetPosition(null)}
+              disabled={isSaving}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmDeletePositionOption}
               disabled={isSaving}
             >
               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

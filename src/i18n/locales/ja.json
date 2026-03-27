@@ -427,6 +427,9 @@
       "USER_MANAGE": "ユーザー管理"
     },
     "deletePositionOption": "この役職候補を削除",
+    "selectPositionOption": "候補から役職を選択",
+    "noPositionOptions": "役職候補がありません",
+    "confirmDeletePositionOption": "役職候補「{{position}}」を削除しますか？すべてのアカウントからこの役職がクリアされます。",
     "deleteProtectedUser": "管理者アカウントは保護されており削除できません",
     "confirmDeleteUser": "アカウント {{username}} を削除しますか？この操作は元に戻せません。",
     "positionOptions": "役職候補",
