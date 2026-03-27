@@ -28,6 +28,11 @@ function isMissingRoleOptionsTableError(error: { message?: string } | null | und
   return msg.includes('role_options') && (msg.includes('does not exist') || msg.includes('schema cache'));
 }
 
+function isMissingUsersPositionColumnError(error: { message?: string } | null | undefined) {
+  const msg = (error?.message || '').toLowerCase();
+  return msg.includes('users.position') && (msg.includes('does not exist') || msg.includes('schema cache'));
+}
+
 export const setMockCurrentUser = (user: User | null) => {
   currentUser = user;
 };
@@ -941,14 +946,17 @@ export const userApi = {
       supabase!.from('users').select('position'),
       supabase!.from('role_options').select('name'),
     ]);
-    if (usersError) throw new Error(usersError.message);
+    const safeUsersData = usersError
+      ? (isMissingUsersPositionColumnError(usersError) ? [] : null)
+      : (usersData || []);
+    if (safeUsersData === null) throw new Error(usersError!.message);
     if (optionsError && !isMissingRoleOptionsTableError(optionsError)) {
       throw new Error(optionsError.message);
     }
     const options = sortPositionOptions([
       ...DEFAULT_POSITION_OPTIONS,
       ...((optionsData || []).map((row) => String((row as { name?: string }).name || ''))),
-      ...((usersData || []).map((row) => String((row as { position?: string }).position || ''))),
+      ...(safeUsersData.map((row) => String((row as { position?: string }).position || ''))),
     ]);
     return { code: 200, message: 'success', data: options };
   },
@@ -977,7 +985,7 @@ export const userApi = {
       .from('users')
       .update({ position: toName })
       .eq('position', fromName);
-    if (usersError) throw new Error(usersError.message);
+    if (usersError && !isMissingUsersPositionColumnError(usersError)) throw new Error(usersError.message);
 
     const { error: optionsError } = await supabase!
       .from('role_options')
@@ -1001,7 +1009,7 @@ export const userApi = {
       .from('users')
       .update({ position: null })
       .eq('position', target);
-    if (usersError) throw new Error(usersError.message);
+    if (usersError && !isMissingUsersPositionColumnError(usersError)) throw new Error(usersError.message);
 
     const { error: optionsError } = await supabase!
       .from('role_options')
