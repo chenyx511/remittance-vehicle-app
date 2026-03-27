@@ -24,6 +24,8 @@ export const mockUsers: User[] = [
     email: 'admin@company.com',
     role: 'ADMIN',
     department: '管理部',
+    position: '管理员',
+    employmentStatus: 'ACTIVE',
     phone: '13800138000',
   },
   {
@@ -32,6 +34,8 @@ export const mockUsers: User[] = [
     email: 'zhangsan@company.com',
     role: 'STAFF',
     department: '不动产部',
+    position: '担当',
+    employmentStatus: 'ACTIVE',
     phone: '13800138001',
   },
   {
@@ -40,6 +44,8 @@ export const mockUsers: User[] = [
     email: 'lisi@company.com',
     role: 'SUPERVISOR',
     department: '不动产部',
+    position: '上司',
+    employmentStatus: 'ACTIVE',
     phone: '13800138002',
   },
   {
@@ -48,6 +54,8 @@ export const mockUsers: User[] = [
     email: 'wangwu@company.com',
     role: 'FINANCE',
     department: '财务部',
+    position: '财务',
+    employmentStatus: 'ACTIVE',
     phone: '13800138003',
   },
   {
@@ -56,6 +64,8 @@ export const mockUsers: User[] = [
     email: 'zhaoliu@company.com',
     role: 'STAFF',
     department: '租赁部',
+    position: '担当',
+    employmentStatus: 'ACTIVE',
     phone: '13800138004',
   },
 ];

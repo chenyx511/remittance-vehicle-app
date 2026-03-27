@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Shield, Loader2, KeyRound, UserPlus } from 'lucide-react';
+import { ArrowLeft, Shield, Loader2, KeyRound, UserPlus, Save, UserX, RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -55,10 +55,12 @@ export function Admin() {
     password: '',
     confirmPassword: '',
     department: '',
+    position: '',
     role: 'STAFF' as UserRole,
   });
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
+  const [profileDrafts, setProfileDrafts] = useState<Record<string, { department: string; position: string }>>({});
 
   useEffect(() => {
     fetchUsers();
@@ -70,6 +72,11 @@ export function Admin() {
     try {
       const res = await userApi.getList();
       setUsers(res.data);
+      setProfileDrafts(
+        Object.fromEntries(
+          res.data.map((u) => [u.id, { department: u.department || '', position: u.position || '' }]),
+        ),
+      );
     } catch {
       setError(t('admin.fetchFailed'));
     } finally {
@@ -88,6 +95,96 @@ export function Admin() {
     } catch (e) {
       const msg = (e as { message?: string })?.message;
       setError(msg || t('admin.updateFailed'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleProfileChange = (userId: string, key: 'department' | 'position', value: string) => {
+    setProfileDrafts((prev) => ({
+      ...prev,
+      [userId]: {
+        department: prev[userId]?.department ?? '',
+        position: prev[userId]?.position ?? '',
+        [key]: value,
+      },
+    }));
+  };
+
+  const handleProfileSave = async (userId: string) => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      const draft = profileDrafts[userId] || { department: '', position: '' };
+      await userApi.updateUserProfile(userId, {
+        department: draft.department.trim() || undefined,
+        position: draft.position.trim() || undefined,
+      });
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId
+            ? {
+                ...u,
+                department: draft.department.trim() || undefined,
+                position: draft.position.trim() || undefined,
+              }
+            : u,
+        ),
+      );
+      toast.success(t('admin.profileUpdated'));
+    } catch (e) {
+      setError(getErrorMessage(e) || t('admin.updateFailed'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeactivate = async (userId: string) => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      await userApi.deactivateUser(userId);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, employmentStatus: 'INACTIVE' } : u)),
+      );
+      toast.success(t('admin.userDeactivated'));
+    } catch (e) {
+      setError(getErrorMessage(e) || t('admin.updateFailed'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleReactivate = async (userId: string) => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      await userApi.reactivateUser(userId);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, employmentStatus: 'ACTIVE' } : u)),
+      );
+      toast.success(t('admin.userReactivated'));
+    } catch (e) {
+      setError(getErrorMessage(e) || t('admin.updateFailed'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (userId: string) => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      await userApi.deleteUser(userId);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      setProfileDrafts((prev) => {
+        const next = { ...prev };
+        delete next[userId];
+        return next;
+      });
+      toast.success(t('admin.userDeleted'));
+    } catch (e) {
+      setError(getErrorMessage(e) || t('admin.updateFailed'));
     } finally {
       setIsSaving(false);
     }
@@ -162,6 +259,7 @@ export function Admin() {
         email: createForm.email.trim(),
         password: createForm.password,
         department: createForm.department.trim() || undefined,
+        position: createForm.position.trim() || undefined,
         role: createForm.role as 'STAFF' | 'SUPERVISOR' | 'FINANCE',
       });
       toast.success(t('admin.createUserSuccess'));
@@ -172,6 +270,7 @@ export function Admin() {
         password: '',
         confirmPassword: '',
         department: '',
+        position: '',
         role: 'STAFF',
       });
       fetchUsers();
@@ -371,6 +470,18 @@ export function Admin() {
                     />
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="create-position">{t('admin.position')}</Label>
+                    <Input
+                      id="create-position"
+                      value={createForm.position}
+                      onChange={(e) =>
+                        setCreateForm((p) => ({ ...p, position: e.target.value }))
+                      }
+                      placeholder={t('admin.positionPlaceholder')}
+                      disabled={isCreating}
+                    />
+                  </div>
+                  <div className="space-y-2">
                     <Label htmlFor="create-role">{t('auth.role')} *</Label>
                     <Select
                       value={createForm.role}
@@ -420,36 +531,106 @@ export function Admin() {
               {users.map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center justify-between gap-4 p-4 rounded-lg border bg-card"
+                  className="p-4 rounded-lg border bg-card space-y-3"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{user.username}</span>
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
-                        {t(`roles.${user.role}`)}
-                      </Badge>
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{user.username}</span>
+                        <Badge variant={getRoleBadgeVariant(user.role)}>
+                          {t(`roles.${user.role}`)}
+                        </Badge>
+                        {user.employmentStatus === 'INACTIVE' && (
+                          <Badge variant="secondary">{t('admin.inactive')}</Badge>
+                        )}
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {user.email}
-                      {user.department && ` · ${user.department}`}
-                    </p>
+                    <Select
+                      value={user.role}
+                      onValueChange={(v) => handleRoleChange(user.id, v as UserRole)}
+                      disabled={isSaving || user.id === 'admin'}
+                    >
+                      <SelectTrigger className="w-32">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {t(`roles.${r}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <Select
-                    value={user.role}
-                    onValueChange={(v) => handleRoleChange(user.id, v as UserRole)}
-                    disabled={isSaving}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ROLES.map((r) => (
-                        <SelectItem key={r} value={r}>
-                          {t(`roles.${r}`)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label htmlFor={`dept-${user.id}`}>{t('auth.department')}</Label>
+                      <Input
+                        id={`dept-${user.id}`}
+                        value={profileDrafts[user.id]?.department ?? ''}
+                        onChange={(e) => handleProfileChange(user.id, 'department', e.target.value)}
+                        disabled={isSaving}
+                        placeholder={t('admin.departmentPlaceholder')}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`position-${user.id}`}>{t('admin.position')}</Label>
+                      <Input
+                        id={`position-${user.id}`}
+                        value={profileDrafts[user.id]?.position ?? ''}
+                        onChange={(e) => handleProfileChange(user.id, 'position', e.target.value)}
+                        disabled={isSaving}
+                        placeholder={t('admin.positionPlaceholder')}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleProfileSave(user.id)}
+                      disabled={isSaving}
+                    >
+                      <Save className="h-4 w-4 mr-2" />
+                      {t('common.save')}
+                    </Button>
+                    {user.id !== 'admin' && user.employmentStatus !== 'INACTIVE' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDeactivate(user.id)}
+                        disabled={isSaving}
+                      >
+                        <UserX className="h-4 w-4 mr-2" />
+                        {t('admin.deactivateUser')}
+                      </Button>
+                    )}
+                    {user.id !== 'admin' && user.employmentStatus === 'INACTIVE' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReactivate(user.id)}
+                        disabled={isSaving}
+                      >
+                        <RotateCcw className="h-4 w-4 mr-2" />
+                        {t('admin.reactivateUser')}
+                      </Button>
+                    )}
+                    {user.id !== 'admin' && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(user.id)}
+                        disabled={isSaving}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        {t('admin.deleteUser')}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

@@ -41,6 +41,8 @@ function toUser(row: Record<string, unknown> | null): User | undefined {
     email: String(row.email),
     role: row.role as User['role'],
     department: row.department as string | undefined,
+    position: row.position as string | undefined,
+    employmentStatus: (row.employment_status as User['employmentStatus']) || 'ACTIVE',
     phone: row.phone as string | undefined,
     avatarUrl: row.avatar_url as string | undefined,
   };
@@ -166,6 +168,7 @@ export const authApi = {
     }
     const user = toUser(data);
     if (!user) throw new Error('用户名或密码错误');
+    if (user.employmentStatus === 'INACTIVE') throw new Error('该账号已离职停用');
     currentUser = user;
     return {
       code: 200,
@@ -179,6 +182,7 @@ export const authApi = {
     email: string;
     password: string;
     department?: string;
+    position?: string;
     role: 'STAFF' | 'SUPERVISOR' | 'FINANCE';
   }): Promise<ApiResponse<User>> => {
     // 仅管理员可创建账号
@@ -205,6 +209,8 @@ export const authApi = {
       email: data.email,
       role: data.role,
       department: data.department,
+      position: data.position,
+      employmentStatus: 'ACTIVE',
       phone: '',
     };
     const { error } = await supabase!.from('users').insert({
@@ -214,6 +220,8 @@ export const authApi = {
       password_hash: passwordHash,
       role: newUser.role,
       department: newUser.department,
+      position: newUser.position,
+      employment_status: newUser.employmentStatus,
     });
     if (error) throw new Error(error.message);
     return { code: 200, message: '注册成功', data: newUser };
@@ -903,5 +911,73 @@ export const userApi = {
     const user = toUser(data);
     if (!user) throw new Error('更新失败');
     return { code: 200, message: '更新成功', data: user };
+  },
+
+  updateUserProfile: async (
+    userId: string,
+    data: { department?: string; position?: string },
+  ): Promise<ApiResponse<User>> => {
+    const { data: updated, error } = await supabase!
+      .from('users')
+      .update({
+        department: data.department ?? null,
+        position: data.position ?? null,
+      })
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const user = toUser(updated);
+    if (!user) throw new Error('更新失败');
+    return { code: 200, message: '更新成功', data: user };
+  },
+
+  deactivateUser: async (userId: string): Promise<ApiResponse<User>> => {
+    if (userId === 'admin') throw new Error('不可停用预设管理员');
+    const { data: updated, error } = await supabase!
+      .from('users')
+      .update({ employment_status: 'INACTIVE' })
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const user = toUser(updated);
+    if (!user) throw new Error('操作失败');
+    return { code: 200, message: '操作成功', data: user };
+  },
+
+  reactivateUser: async (userId: string): Promise<ApiResponse<User>> => {
+    const { data: updated, error } = await supabase!
+      .from('users')
+      .update({ employment_status: 'ACTIVE' })
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const user = toUser(updated);
+    if (!user) throw new Error('操作失败');
+    return { code: 200, message: '操作成功', data: user };
+  },
+
+  deleteUser: async (userId: string): Promise<ApiResponse<null>> => {
+    if (userId === 'admin') throw new Error('不可删除预设管理员');
+    const { data: remittanceActive } = await supabase!
+      .from('remittance_requests')
+      .select('id')
+      .eq('applicant_id', userId)
+      .in('status', ['PENDING', 'SUPERVISOR_APPROVED', 'FINANCE_PROCESSING'])
+      .limit(1);
+    const { data: vehicleActive } = await supabase!
+      .from('vehicle_requests')
+      .select('id')
+      .eq('applicant_id', userId)
+      .in('status', ['PENDING', 'APPROVED', 'IN_USE'])
+      .limit(1);
+    if ((remittanceActive && remittanceActive.length > 0) || (vehicleActive && vehicleActive.length > 0)) {
+      throw new Error('该用户存在进行中的申请，无法删除');
+    }
+    const { error } = await supabase!.from('users').delete().eq('id', userId);
+    if (error) throw new Error(error.message);
+    return { code: 200, message: '删除成功', data: null };
   },
 };

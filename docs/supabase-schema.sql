@@ -9,6 +9,8 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash TEXT,
   role TEXT NOT NULL CHECK (role IN ('STAFF','SUPERVISOR','FINANCE','ADMIN')),
   department TEXT,
+  position TEXT,
+  employment_status TEXT NOT NULL DEFAULT 'ACTIVE' CHECK (employment_status IN ('ACTIVE','INACTIVE')),
   phone TEXT,
   avatar_url TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
@@ -16,6 +18,17 @@ CREATE TABLE IF NOT EXISTS users (
 
 -- 为已有表添加 password_hash 列（若表已存在）
 ALTER TABLE users ADD COLUMN IF NOT EXISTS password_hash TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS position TEXT;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS employment_status TEXT NOT NULL DEFAULT 'ACTIVE';
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'users_employment_status_check'
+  ) THEN
+    ALTER TABLE users ADD CONSTRAINT users_employment_status_check CHECK (employment_status IN ('ACTIVE','INACTIVE'));
+  END IF;
+END $$;
+UPDATE users SET employment_status = 'ACTIVE' WHERE employment_status IS NULL;
 -- 为已有 admin 用户设置默认密码 123456
 UPDATE users SET password_hash = '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92' WHERE id = 'admin' AND (password_hash IS NULL OR password_hash = '');
 
@@ -120,12 +133,12 @@ CREATE POLICY "Allow all for vehicle_requests" ON vehicle_requests FOR ALL USING
 CREATE POLICY "Allow all for notifications" ON notifications FOR ALL USING (true) WITH CHECK (true);
 
 -- 初始用户数据（预设管理员：admin / 123456，password_hash 为 123456 的 SHA-256）
-INSERT INTO users (id, username, email, password_hash, role, department, phone) VALUES
-  ('admin', 'admin', 'admin@company.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'ADMIN', '管理部', '13800138000'),
-  ('1', '张三', 'zhangsan@company.com', NULL, 'STAFF', '不动产部', '13800138001'),
-  ('2', '李四', 'lisi@company.com', NULL, 'SUPERVISOR', '不动产部', '13800138002'),
-  ('3', '王五', 'wangwu@company.com', NULL, 'FINANCE', '财务部', '13800138003'),
-  ('4', '赵六', 'zhaoliu@company.com', NULL, 'STAFF', '租赁部', '13800138004')
+INSERT INTO users (id, username, email, password_hash, role, department, position, employment_status, phone) VALUES
+  ('admin', 'admin', 'admin@company.com', '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92', 'ADMIN', '管理部', '管理员', 'ACTIVE', '13800138000'),
+  ('1', '张三', 'zhangsan@company.com', NULL, 'STAFF', '不动产部', '担当', 'ACTIVE', '13800138001'),
+  ('2', '李四', 'lisi@company.com', NULL, 'SUPERVISOR', '不动产部', '上司', 'ACTIVE', '13800138002'),
+  ('3', '王五', 'wangwu@company.com', NULL, 'FINANCE', '财务部', '财务', 'ACTIVE', '13800138003'),
+  ('4', '赵六', 'zhaoliu@company.com', NULL, 'STAFF', '租赁部', '担当', 'ACTIVE', '13800138004')
 ON CONFLICT (id) DO NOTHING;
 
 -- 初始车辆数据

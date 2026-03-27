@@ -8,6 +8,8 @@ export interface User {
   email: string;
   role: UserRole;
   department?: string;
+  position?: string;
+  employmentStatus?: 'ACTIVE' | 'INACTIVE';
   phone?: string;
   avatarUrl?: string;
 }

@@ -317,7 +317,15 @@
     "noScheduleToday": "今日无用车安排",
     "applicantLabel": "申请人",
     "moreItems": "更多",
-    "weekDays": ["日", "一", "二", "三", "四", "五", "六"]
+    "weekDays": [
+      "日",
+      "一",
+      "二",
+      "三",
+      "四",
+      "五",
+      "六"
+    ]
   },
   "notifications": {
     "title": "通知中心",
@@ -349,9 +357,21 @@
     "changeAvatar": "更换头像",
     "phonePlaceholder": "请输入手机号",
     "permissionsList": {
-      "STAFF": ["提交汇款申请", "申请用车", "查看自己的申请记录"],
-      "SUPERVISOR": ["审批汇款申请", "审批用车申请", "查看部门所有申请"],
-      "FINANCE": ["处理汇款申请", "上传汇款凭证", "查看所有汇款记录"]
+      "STAFF": [
+        "提交汇款申请",
+        "申请用车",
+        "查看自己的申请记录"
+      ],
+      "SUPERVISOR": [
+        "审批汇款申请",
+        "审批用车申请",
+        "查看部门所有申请"
+      ],
+      "FINANCE": [
+        "处理汇款申请",
+        "上传汇款凭证",
+        "查看所有汇款记录"
+      ]
     }
   },
   "validation": {
@@ -384,7 +404,18 @@
     "createUser": "创建账号",
     "createUserDesc": "由管理员创建新用户并分配权限",
     "createUserSuccess": "账号创建成功",
-    "createUserFailed": "创建账号失败"
+    "createUserFailed": "创建账号失败",
+    "position": "岗位",
+    "positionPlaceholder": "请输入岗位（可自定义）",
+    "departmentPlaceholder": "请输入部门",
+    "profileUpdated": "部门/岗位已更新",
+    "inactive": "已离职",
+    "deactivateUser": "离职停用",
+    "reactivateUser": "恢复在职",
+    "deleteUser": "删除账号",
+    "userDeactivated": "账号已停用",
+    "userReactivated": "账号已恢复",
+    "userDeleted": "账号已删除"
   },
   "errors": {
     "generic": "发生错误",

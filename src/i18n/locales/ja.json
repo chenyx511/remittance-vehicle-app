@@ -317,7 +317,15 @@
     "noScheduleToday": "本日の車両利用予定はありません",
     "applicantLabel": "申請者",
     "moreItems": "件以上",
-    "weekDays": ["日", "月", "火", "水", "木", "金", "土"]
+    "weekDays": [
+      "日",
+      "月",
+      "火",
+      "水",
+      "木",
+      "金",
+      "土"
+    ]
   },
   "notifications": {
     "title": "通知センター",
@@ -349,9 +357,21 @@
     "changeAvatar": "アバター変更",
     "phonePlaceholder": "電話番号を入力",
     "permissionsList": {
-      "STAFF": ["送金申請の作成", "車両申請の作成", "自分の申請履歴の閲覧"],
-      "SUPERVISOR": ["送金申請の承認", "車両申請の承認", "部署のすべての申請の閲覧"],
-      "FINANCE": ["送金申請の処理", "送金証明のアップロード", "すべての送金記録の閲覧"]
+      "STAFF": [
+        "送金申請の作成",
+        "車両申請の作成",
+        "自分の申請履歴の閲覧"
+      ],
+      "SUPERVISOR": [
+        "送金申請の承認",
+        "車両申請の承認",
+        "部署のすべての申請の閲覧"
+      ],
+      "FINANCE": [
+        "送金申請の処理",
+        "送金証明のアップロード",
+        "すべての送金記録の閲覧"
+      ]
     }
   },
   "validation": {
@@ -384,7 +404,18 @@
     "createUser": "アカウント作成",
     "createUserDesc": "管理者が新規ユーザーを作成し、権限を割り当てます",
     "createUserSuccess": "アカウントを作成しました",
-    "createUserFailed": "アカウントの作成に失敗しました"
+    "createUserFailed": "アカウントの作成に失敗しました",
+    "position": "役職",
+    "positionPlaceholder": "役職を入力（自由設定）",
+    "departmentPlaceholder": "部署を入力",
+    "profileUpdated": "部署・役職を更新しました",
+    "inactive": "退職",
+    "deactivateUser": "退職処理（停止）",
+    "reactivateUser": "在職に戻す",
+    "deleteUser": "アカウント削除",
+    "userDeactivated": "アカウントを停止しました",
+    "userReactivated": "アカウントを再有効化しました",
+    "userDeleted": "アカウントを削除しました"
   },
   "errors": {
     "generic": "エラーが発生しました",

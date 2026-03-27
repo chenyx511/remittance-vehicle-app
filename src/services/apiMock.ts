@@ -98,6 +98,9 @@ export const authApi = {
     if (!user) {
       throw new Error('用户名或密码错误');
     }
+    if (user.employmentStatus === 'INACTIVE') {
+      throw new Error('该账号已离职停用');
+    }
     const storedHash = mockUserPasswords[user.id];
     if (storedHash) {
       const ok = await verifyPassword(credentials.password, storedHash);
@@ -119,6 +122,7 @@ export const authApi = {
     email: string;
     password: string;
     department?: string;
+    position?: string;
     role: 'STAFF' | 'SUPERVISOR' | 'FINANCE';
   }): Promise<ApiResponse<User>> => {
     await delay(500);
@@ -142,6 +146,8 @@ export const authApi = {
       email: data.email,
       role: data.role,
       department: data.department,
+      position: data.position,
+      employmentStatus: 'ACTIVE',
       phone: '',
     };
 
@@ -874,5 +880,53 @@ export const userApi = {
     if (!user) throw new Error('用户不存在');
     user.role = role;
     return { code: 200, message: '更新成功', data: user };
+  },
+
+  updateUserProfile: async (
+    userId: string,
+    data: { department?: string; position?: string },
+  ): Promise<ApiResponse<User>> => {
+    await delay(300);
+    const user = mockUsers.find((u) => u.id === userId);
+    if (!user) throw new Error('用户不存在');
+    user.department = data.department;
+    user.position = data.position;
+    return { code: 200, message: '更新成功', data: user };
+  },
+
+  deactivateUser: async (userId: string): Promise<ApiResponse<User>> => {
+    await delay(300);
+    const user = mockUsers.find((u) => u.id === userId);
+    if (!user) throw new Error('用户不存在');
+    if (user.id === 'admin') throw new Error('不可停用预设管理员');
+    user.employmentStatus = 'INACTIVE';
+    return { code: 200, message: '操作成功', data: user };
+  },
+
+  reactivateUser: async (userId: string): Promise<ApiResponse<User>> => {
+    await delay(300);
+    const user = mockUsers.find((u) => u.id === userId);
+    if (!user) throw new Error('用户不存在');
+    user.employmentStatus = 'ACTIVE';
+    return { code: 200, message: '操作成功', data: user };
+  },
+
+  deleteUser: async (userId: string): Promise<ApiResponse<null>> => {
+    await delay(300);
+    if (userId === 'admin') throw new Error('不可删除预设管理员');
+    const idx = mockUsers.findIndex((u) => u.id === userId);
+    if (idx < 0) throw new Error('用户不存在');
+    const hasPendingRemittance = mockRemittanceRequests.some(
+      (r) => r.applicantId === userId && ['PENDING', 'SUPERVISOR_APPROVED', 'FINANCE_PROCESSING'].includes(r.status),
+    );
+    const hasPendingVehicle = mockVehicleRequests.some(
+      (r) => r.applicantId === userId && ['PENDING', 'APPROVED', 'IN_USE'].includes(r.status),
+    );
+    if (hasPendingRemittance || hasPendingVehicle) {
+      throw new Error('该用户存在进行中的申请，无法删除');
+    }
+    mockUsers.splice(idx, 1);
+    delete mockUserPasswords[userId];
+    return { code: 200, message: '删除成功', data: null };
   },
 };
