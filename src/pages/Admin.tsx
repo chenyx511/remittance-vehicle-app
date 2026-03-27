@@ -703,7 +703,7 @@ export function Admin() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <Label htmlFor={`dept-${user.id}`}>{t('auth.department')}</Label>
                       <Input
@@ -716,39 +716,15 @@ export function Admin() {
                     </div>
                     <div className="space-y-1">
                       <Label htmlFor={`position-${user.id}`}>{t('admin.position')}</Label>
-                      <Input
-                        id={`position-${user.id}`}
-                        list={`position-options-${user.id}`}
-                        value={profileDrafts[user.id]?.position ?? ''}
-                        onChange={(e) => handleProfileChange(user.id, 'position', e.target.value)}
-                        disabled={isSaving}
-                        placeholder={t('admin.positionPlaceholder')}
-                      />
-                      <datalist id={`position-options-${user.id}`}>
-                        {positionOptions.map((position) => (
-                          <option key={position} value={position} />
-                        ))}
-                      </datalist>
-                    </div>
-                    <div className="space-y-1">
-                      <Label>{t('admin.position')}</Label>
                       <div className="flex items-center gap-2">
-                        <Select
-                          value={selectedPosition}
-                          onValueChange={(value) => handleProfileChange(user.id, 'position', value)}
-                          disabled={isSaving || positionOptions.length === 0}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder={t('admin.selectPositionOption')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {positionOptions.map((position) => (
-                              <SelectItem key={position} value={position}>
-                                {position}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          id={`position-${user.id}`}
+                          list={`position-options-${user.id}`}
+                          value={profileDrafts[user.id]?.position ?? ''}
+                          onChange={(e) => handleProfileChange(user.id, 'position', e.target.value)}
+                          disabled={isSaving}
+                          placeholder={t('admin.positionPlaceholder')}
+                        />
                         {selectedPosition && (
                           <Button
                             type="button"
@@ -762,6 +738,11 @@ export function Admin() {
                           </Button>
                         )}
                       </div>
+                      <datalist id={`position-options-${user.id}`}>
+                        {positionOptions.map((position) => (
+                          <option key={position} value={position} />
+                        ))}
+                      </datalist>
                     </div>
                   </div>
 
