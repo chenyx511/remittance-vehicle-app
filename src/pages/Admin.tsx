@@ -42,6 +42,10 @@ const ROLE_POSITION_MAP: Record<UserRole, string> = {
 };
 
 const PERMISSION_OPTIONS: OperationPermission[] = ALL_PERMISSIONS;
+const sortPositionOptions = (items: string[]) =>
+  Array.from(new Set(items.map((item) => item.trim()).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b, 'zh-Hans-CN'),
+  );
 
 export function Admin() {
   const { t } = useTranslation();
@@ -76,6 +80,9 @@ export function Admin() {
   const [positionOptions, setPositionOptions] = useState<string[]>([]);
   const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
   const [deleteTargetPosition, setDeleteTargetPosition] = useState<string | null>(null);
+  const [newRoleName, setNewRoleName] = useState('');
+  const [editingRoleName, setEditingRoleName] = useState<string | null>(null);
+  const [editingRoleValue, setEditingRoleValue] = useState('');
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -89,11 +96,7 @@ export function Admin() {
         ),
       );
       setPositionOptions(
-        Array.from(
-          new Set(
-            res.data.map((u) => (u.position || '').trim()).filter(Boolean),
-          ),
-        ).sort((a, b) => a.localeCompare(b, 'zh-Hans-CN')),
+        sortPositionOptions(res.data.map((u) => u.position || '')),
       );
       setPermissionDrafts(
         Object.fromEntries(
@@ -238,11 +241,7 @@ export function Admin() {
       });
       await userApi.updateUserPermissions(userId, permissions);
       if (finalPosition) {
-        setPositionOptions((prev) =>
-          prev.includes(finalPosition)
-            ? prev
-            : [...prev, finalPosition].sort((a, b) => a.localeCompare(b, 'zh-Hans-CN')),
-        );
+        setPositionOptions((prev) => sortPositionOptions([...prev, finalPosition]));
       }
       setUsers((prev) =>
         prev.map((u) =>
@@ -307,6 +306,73 @@ export function Admin() {
     if (!deleteTargetPosition) return;
     const deleted = await handleDeletePositionOption(deleteTargetPosition);
     if (deleted) setDeleteTargetPosition(null);
+  };
+
+  const handleAddRoleOption = () => {
+    const next = newRoleName.trim();
+    if (!next) return;
+    if (positionOptions.includes(next)) {
+      setError(t('admin.roleExists'));
+      return;
+    }
+    setPositionOptions((prev) => sortPositionOptions([...prev, next]));
+    setNewRoleName('');
+    toast.success(t('admin.roleAdded'));
+  };
+
+  const handleStartEditRoleOption = (role: string) => {
+    setEditingRoleName(role);
+    setEditingRoleValue(role);
+  };
+
+  const handleSaveEditRoleOption = async () => {
+    if (!editingRoleName) return;
+    const from = editingRoleName.trim();
+    const to = editingRoleValue.trim();
+    if (!to) return;
+    if (from === to) {
+      setEditingRoleName(null);
+      setEditingRoleValue('');
+      return;
+    }
+    if (positionOptions.includes(to)) {
+      setError(t('admin.roleExists'));
+      return;
+    }
+
+    setIsSaving(true);
+    setError(null);
+    try {
+      const affected = users.filter((u) => (u.position || '').trim() === from);
+      for (const u of affected) {
+        await userApi.updateUserProfile(u.id, {
+          department: u.department,
+          position: to,
+        });
+      }
+
+      setUsers((prev) =>
+        prev.map((u) => ((u.position || '').trim() === from ? { ...u, position: to } : u)),
+      );
+      setProfileDrafts((prev) =>
+        Object.fromEntries(
+          Object.entries(prev).map(([uid, draft]) => [
+            uid,
+            draft.position.trim() === from ? { ...draft, position: to } : draft,
+          ]),
+        ),
+      );
+      setPositionOptions((prev) =>
+        sortPositionOptions(prev.map((role) => (role === from ? to : role))),
+      );
+      setEditingRoleName(null);
+      setEditingRoleValue('');
+      toast.success(t('admin.roleUpdated'));
+    } catch (e) {
+      setError(getErrorMessage(e) || t('admin.updateFailed'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const isPresetAdmin = currentUser?.id === 'admin' && currentUser?.role === 'ADMIN';
@@ -679,10 +745,6 @@ export function Admin() {
           ) : (
             <div className="space-y-4">
               {users.map((user) => {
-                const currentDraftPosition = (profileDrafts[user.id]?.position ?? '').trim();
-                const selectedPosition = positionOptions.includes(currentDraftPosition)
-                  ? currentDraftPosition
-                  : undefined;
                 return (
                   <div
                     key={user.id}
@@ -703,7 +765,7 @@ export function Admin() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-1 gap-3">
                     <div className="space-y-1">
                       <Label htmlFor={`dept-${user.id}`}>{t('auth.department')}</Label>
                       <Input
@@ -713,36 +775,6 @@ export function Admin() {
                         disabled={isSaving}
                         placeholder={t('admin.departmentPlaceholder')}
                       />
-                    </div>
-                    <div className="space-y-1">
-                      <Label htmlFor={`position-${user.id}`}>{t('admin.position')}</Label>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          id={`position-${user.id}`}
-                          list={`position-options-${user.id}`}
-                          value={profileDrafts[user.id]?.position ?? ''}
-                          onChange={(e) => handleProfileChange(user.id, 'position', e.target.value)}
-                          disabled={isSaving}
-                          placeholder={t('admin.positionPlaceholder')}
-                        />
-                        {selectedPosition && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setDeleteTargetPosition(selectedPosition)}
-                            disabled={isSaving}
-                            title={t('admin.deletePositionOption')}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                      <datalist id={`position-options-${user.id}`}>
-                        {positionOptions.map((position) => (
-                          <option key={position} value={position} />
-                        ))}
-                      </datalist>
                     </div>
                   </div>
 
@@ -833,6 +865,91 @@ export function Admin() {
               })}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('admin.roleManagement')}</CardTitle>
+          <CardDescription>{t('admin.roleManagementDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={newRoleName}
+              onChange={(e) => setNewRoleName(e.target.value)}
+              placeholder={t('admin.newRolePlaceholder')}
+              className="w-full md:w-80"
+              disabled={isSaving}
+            />
+            <Button type="button" onClick={handleAddRoleOption} disabled={isSaving}>
+              {t('admin.addRole')}
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {positionOptions.map((role) => (
+              <div key={role} className="flex items-center justify-between rounded-md border p-2">
+                {editingRoleName === role ? (
+                  <Input
+                    value={editingRoleValue}
+                    onChange={(e) => setEditingRoleValue(e.target.value)}
+                    className="mr-2"
+                    disabled={isSaving}
+                  />
+                ) : (
+                  <span className="text-sm">{role}</span>
+                )}
+                <div className="flex items-center gap-2">
+                  {editingRoleName === role ? (
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleSaveEditRoleOption}
+                        disabled={isSaving}
+                      >
+                        {t('common.save')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingRoleName(null);
+                          setEditingRoleValue('');
+                        }}
+                        disabled={isSaving}
+                      >
+                        {t('common.cancel')}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStartEditRoleOption(role)}
+                        disabled={isSaving}
+                      >
+                        {t('common.edit')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeleteTargetPosition(role)}
+                        disabled={isSaving}
+                      >
+                        {t('common.delete')}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
