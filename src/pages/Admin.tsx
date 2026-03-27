@@ -703,7 +703,7 @@ export function Admin() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="space-y-1">
                       <Label htmlFor={`dept-${user.id}`}>{t('auth.department')}</Label>
                       <Input
@@ -718,11 +718,17 @@ export function Admin() {
                       <Label htmlFor={`position-${user.id}`}>{t('admin.position')}</Label>
                       <Input
                         id={`position-${user.id}`}
+                        list={`position-options-${user.id}`}
                         value={profileDrafts[user.id]?.position ?? ''}
                         onChange={(e) => handleProfileChange(user.id, 'position', e.target.value)}
                         disabled={isSaving}
                         placeholder={t('admin.positionPlaceholder')}
                       />
+                      <datalist id={`position-options-${user.id}`}>
+                        {positionOptions.map((position) => (
+                          <option key={position} value={position} />
+                        ))}
+                      </datalist>
                     </div>
                     <div className="space-y-1">
                       <Label>{t('admin.position')}</Label>
@@ -757,25 +763,26 @@ export function Admin() {
                         )}
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <Label>{t('auth.role')}</Label>
-                      <Select
-                        value={user.role}
-                        onValueChange={(v) => handleRoleChange(user.id, v as UserRole)}
-                        disabled={isSaving || user.id === 'admin'}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ROLES.map((r) => (
-                            <SelectItem key={r} value={r}>
-                              {t(`roles.${r}`)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label>{t('auth.role')}</Label>
+                    <Select
+                      value={user.role}
+                      onValueChange={(v) => handleRoleChange(user.id, v as UserRole)}
+                      disabled={isSaving || user.id === 'admin'}
+                    >
+                      <SelectTrigger className="w-full md:w-48">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ROLES.map((r) => (
+                          <SelectItem key={r} value={r}>
+                            {t(`roles.${r}`)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-1">
