@@ -532,6 +532,91 @@ export function Admin() {
 
       <Card>
         <CardHeader>
+          <CardTitle>{t('admin.roleManagement')}</CardTitle>
+          <CardDescription>{t('admin.roleManagementDesc')}</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={newRoleName}
+              onChange={(e) => setNewRoleName(e.target.value)}
+              placeholder={t('admin.newRolePlaceholder')}
+              className="w-full md:w-80"
+              disabled={isSaving}
+            />
+            <Button type="button" onClick={handleAddRoleOption} disabled={isSaving}>
+              {t('admin.addRole')}
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {positionOptions.map((role) => (
+              <div key={role} className="flex items-center justify-between rounded-md border p-2">
+                {editingRoleName === role ? (
+                  <Input
+                    value={editingRoleValue}
+                    onChange={(e) => setEditingRoleValue(e.target.value)}
+                    className="mr-2"
+                    disabled={isSaving}
+                  />
+                ) : (
+                  <span className="text-sm">{role}</span>
+                )}
+                <div className="flex items-center gap-2">
+                  {editingRoleName === role ? (
+                    <>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleSaveEditRoleOption}
+                        disabled={isSaving}
+                      >
+                        {t('common.save')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditingRoleName(null);
+                          setEditingRoleValue('');
+                        }}
+                        disabled={isSaving}
+                      >
+                        {t('common.cancel')}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleStartEditRoleOption(role)}
+                        disabled={isSaving}
+                      >
+                        {t('common.edit')}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setDeleteTargetPosition(role)}
+                        disabled={isSaving}
+                      >
+                        {t('common.delete')}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle>{t('admin.userManagement')}</CardTitle>
@@ -832,91 +917,6 @@ export function Admin() {
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('admin.roleManagement')}</CardTitle>
-          <CardDescription>{t('admin.roleManagementDesc')}</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              value={newRoleName}
-              onChange={(e) => setNewRoleName(e.target.value)}
-              placeholder={t('admin.newRolePlaceholder')}
-              className="w-full md:w-80"
-              disabled={isSaving}
-            />
-            <Button type="button" onClick={handleAddRoleOption} disabled={isSaving}>
-              {t('admin.addRole')}
-            </Button>
-          </div>
-
-          <div className="space-y-2">
-            {positionOptions.map((role) => (
-              <div key={role} className="flex items-center justify-between rounded-md border p-2">
-                {editingRoleName === role ? (
-                  <Input
-                    value={editingRoleValue}
-                    onChange={(e) => setEditingRoleValue(e.target.value)}
-                    className="mr-2"
-                    disabled={isSaving}
-                  />
-                ) : (
-                  <span className="text-sm">{role}</span>
-                )}
-                <div className="flex items-center gap-2">
-                  {editingRoleName === role ? (
-                    <>
-                      <Button
-                        type="button"
-                        size="sm"
-                        onClick={handleSaveEditRoleOption}
-                        disabled={isSaving}
-                      >
-                        {t('common.save')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditingRoleName(null);
-                          setEditingRoleValue('');
-                        }}
-                        disabled={isSaving}
-                      >
-                        {t('common.cancel')}
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleStartEditRoleOption(role)}
-                        disabled={isSaving}
-                      >
-                        {t('common.edit')}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setDeleteTargetPosition(role)}
-                        disabled={isSaving}
-                      >
-                        {t('common.delete')}
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
         </CardContent>
       </Card>
 
