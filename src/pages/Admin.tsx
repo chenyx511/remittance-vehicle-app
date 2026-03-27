@@ -75,6 +75,7 @@ export function Admin() {
   const [profileDrafts, setProfileDrafts] = useState<Record<string, { department: string; position: string }>>({});
   const [positionOptions, setPositionOptions] = useState<string[]>([]);
   const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
+  const protectedPositions = new Set([ROLE_POSITION_MAP.ADMIN, '管理员', '管理者']);
 
   const fetchUsers = useCallback(async () => {
     setIsLoading(true);
@@ -262,10 +263,16 @@ export function Admin() {
   const handleDeletePositionOption = async (option: string) => {
     const targetOption = option.trim();
     if (!targetOption) return;
+    if (protectedPositions.has(targetOption)) {
+      setError(t('admin.protectedPositionCannotDelete'));
+      return;
+    }
     setIsSaving(true);
     setError(null);
     try {
-      const affected = users.filter((u) => (u.position || '').trim() === targetOption);
+      const affected = users.filter(
+        (u) => u.role !== 'ADMIN' && (u.position || '').trim() === targetOption,
+      );
       for (const u of affected) {
         await userApi.updateUserProfile(u.id, {
           department: u.department,
@@ -274,7 +281,7 @@ export function Admin() {
       }
       setUsers((prev) =>
         prev.map((u) =>
-          (u.position || '').trim() === targetOption
+          u.role !== 'ADMIN' && (u.position || '').trim() === targetOption
             ? { ...u, position: undefined }
             : u,
         ),
@@ -683,42 +690,6 @@ export function Admin() {
                       </div>
                       <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                     </div>
-                    <div className="flex flex-col gap-1 w-56">
-                      <Label className="text-xs text-muted-foreground">{t('admin.positionOptions')}</Label>
-                      <div className="flex items-center gap-2">
-                      <Select
-                        value={
-                          positionOptions.includes(profileDrafts[user.id]?.position ?? '')
-                            ? (profileDrafts[user.id]?.position ?? '')
-                            : ''
-                        }
-                        onValueChange={(v) => handleProfileChange(user.id, 'position', v)}
-                        disabled={isSaving}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t('admin.positionPlaceholder')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {positionOptions.map((position) => (
-                            <SelectItem key={position} value={position}>
-                              {position}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 shrink-0"
-                        onClick={() => handleDeletePositionOption(profileDrafts[user.id]?.position || '')}
-                        disabled={isSaving || !(profileDrafts[user.id]?.position || '').trim()}
-                        title={t('admin.deletePositionOption')}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                      </div>
-                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -741,6 +712,34 @@ export function Admin() {
                         disabled={isSaving}
                         placeholder={t('admin.positionPlaceholder')}
                       />
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {positionOptions.map((position) => (
+                          <div
+                            key={position}
+                            className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs"
+                          >
+                            <button
+                              type="button"
+                              className="hover:text-primary"
+                              onClick={() => handleProfileChange(user.id, 'position', position)}
+                              disabled={isSaving}
+                            >
+                              {position}
+                            </button>
+                            {!protectedPositions.has(position) && (
+                              <button
+                                type="button"
+                                className="text-muted-foreground hover:text-destructive"
+                                onClick={() => handleDeletePositionOption(position)}
+                                disabled={isSaving}
+                                title={t('admin.deletePositionOption')}
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                     <div className="space-y-1">
                       <Label>{t('auth.role')}</Label>

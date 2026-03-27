@@ -430,7 +430,8 @@
     "deleteProtectedUser": "管理者アカウントは保護されており削除できません",
     "confirmDeleteUser": "アカウント {{username}} を削除しますか？この操作は元に戻せません。",
     "positionOptions": "役職候補",
-    "positionOptionDeleted": "役職候補を削除し、関連データも同期しました"
+    "positionOptionDeleted": "役職候補を削除し、関連データも同期しました",
+    "protectedPositionCannotDelete": "管理者の役職は削除できません"
   },
   "errors": {
     "generic": "エラーが発生しました",

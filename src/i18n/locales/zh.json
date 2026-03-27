@@ -430,7 +430,8 @@
     "deleteProtectedUser": "管理员账号受保护，不能删除",
     "confirmDeleteUser": "确定删除账号 {{username}} 吗？该操作不可恢复。",
     "positionOptions": "岗位候选",
-    "positionOptionDeleted": "岗位候选已删除并同步清理"
+    "positionOptionDeleted": "岗位候选已删除并同步清理",
+    "protectedPositionCannotDelete": "管理员职务不可删除"
   },
   "errors": {
     "generic": "发生错误",
