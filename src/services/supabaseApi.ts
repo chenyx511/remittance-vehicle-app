@@ -981,7 +981,14 @@ export const userApi = {
   },
 
   deleteUser: async (userId: string): Promise<ApiResponse<null>> => {
-    if (userId === 'admin') throw new Error('不可删除预设管理员');
+    const { data: target, error: fetchErr } = await supabase!
+      .from('users')
+      .select('id, role')
+      .eq('id', userId)
+      .single();
+    if (fetchErr || !target) throw new Error('用户不存在');
+    if (String(target.role) === 'ADMIN') throw new Error('管理员账号受保护，无法删除');
+    if (currentUser?.id === userId) throw new Error('不可删除当前登录账号');
     const { data: remittanceActive } = await supabase!
       .from('remittance_requests')
       .select('id')

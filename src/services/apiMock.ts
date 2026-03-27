@@ -927,9 +927,11 @@ export const userApi = {
 
   deleteUser: async (userId: string): Promise<ApiResponse<null>> => {
     await delay(300);
-    if (userId === 'admin') throw new Error('不可删除预设管理员');
+    const target = mockUsers.find((u) => u.id === userId);
+    if (!target) throw new Error('用户不存在');
+    if (target.role === 'ADMIN') throw new Error('管理员账号受保护，无法删除');
+    if (currentUser?.id === userId) throw new Error('不可删除当前登录账号');
     const idx = mockUsers.findIndex((u) => u.id === userId);
-    if (idx < 0) throw new Error('用户不存在');
     const hasPendingRemittance = mockRemittanceRequests.some(
       (r) => r.applicantId === userId && ['PENDING', 'SUPERVISOR_APPROVED', 'FINANCE_PROCESSING'].includes(r.status),
     );

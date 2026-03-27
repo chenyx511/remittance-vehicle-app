@@ -74,6 +74,7 @@ export function Admin() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [profileDrafts, setProfileDrafts] = useState<Record<string, { department: string; position: string }>>({});
   const [positionOptions, setPositionOptions] = useState<string[]>([]);
+  const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -189,18 +190,30 @@ export function Admin() {
     }
   };
 
-  const handleDelete = async (userId: string) => {
+  const handleDeleteClick = (userId: string) => {
+    const target = users.find((u) => u.id === userId);
+    if (!target) return;
+    if (target.role === 'ADMIN' || target.id === currentUser?.id) {
+      setError(t('admin.deleteProtectedUser'));
+      return;
+    }
+    setDeleteTargetUser(target);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTargetUser) return;
     setIsSaving(true);
     setError(null);
     try {
-      await userApi.deleteUser(userId);
-      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      await userApi.deleteUser(deleteTargetUser.id);
+      setUsers((prev) => prev.filter((u) => u.id !== deleteTargetUser.id));
       setProfileDrafts((prev) => {
         const next = { ...prev };
-        delete next[userId];
+        delete next[deleteTargetUser.id];
         return next;
       });
       toast.success(t('admin.userDeleted'));
+      setDeleteTargetUser(null);
     } catch (e) {
       setError(getErrorMessage(e) || t('admin.updateFailed'));
     } finally {
@@ -262,6 +275,7 @@ export function Admin() {
   };
 
   const isPresetAdmin = currentUser?.id === 'admin' && currentUser?.role === 'ADMIN';
+  const canDeleteUser = (user: User) => user.role !== 'ADMIN' && user.id !== currentUser?.id;
 
   const handleUpdateCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -770,11 +784,11 @@ export function Admin() {
                         {t('admin.reactivateUser')}
                       </Button>
                     )}
-                    {user.id !== 'admin' && (
+                    {canDeleteUser(user) && (
                       <Button
                         variant="destructive"
                         size="sm"
-                        onClick={() => handleDelete(user.id)}
+                        onClick={() => handleDeleteClick(user.id)}
                         disabled={isSaving}
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
@@ -788,6 +802,38 @@ export function Admin() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!deleteTargetUser} onOpenChange={(open) => !open && setDeleteTargetUser(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t('admin.deleteUser')}</DialogTitle>
+            <DialogDescription>
+              {deleteTargetUser
+                ? t('admin.confirmDeleteUser', { username: deleteTargetUser.username })
+                : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteTargetUser(null)}
+              disabled={isSaving}
+            >
+              {t('common.cancel')}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={handleConfirmDelete}
+              disabled={isSaving}
+            >
+              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {t('common.delete')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

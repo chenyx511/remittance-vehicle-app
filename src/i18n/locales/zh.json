@@ -426,7 +426,9 @@
       "VEHICLE_USE": "用车执行",
       "USER_MANAGE": "用户管理"
     },
-    "deletePositionOption": "删除该岗位选项"
+    "deletePositionOption": "删除该岗位选项",
+    "deleteProtectedUser": "管理员账号受保护，不能删除",
+    "confirmDeleteUser": "确定删除账号 {{username}} 吗？该操作不可恢复。"
   },
   "errors": {
     "generic": "发生错误",
