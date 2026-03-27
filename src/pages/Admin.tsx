@@ -686,11 +686,6 @@ export function Admin() {
           ) : (
             <div className="space-y-4">
               {users.map((user) => {
-                const draftPosition = (profileDrafts[user.id]?.position ?? '').trim();
-                const positionSelectValue = positionOptions.includes(draftPosition) ? draftPosition : undefined;
-                const canDeleteSelectedPosition = Boolean(
-                  positionSelectValue && !protectedPositions.has(positionSelectValue),
-                );
                 return (
                   <div
                     key={user.id}
@@ -731,43 +726,6 @@ export function Admin() {
                         disabled={isSaving}
                         placeholder={t('admin.positionPlaceholder')}
                       />
-                      <div className="flex items-center gap-2 pt-1">
-                        <Select
-                          value={positionSelectValue}
-                          onValueChange={(value) => handleProfileChange(user.id, 'position', value)}
-                          disabled={isSaving || positionOptions.length === 0}
-                        >
-                          <SelectTrigger className="h-8 text-xs">
-                            <SelectValue
-                              placeholder={
-                                positionOptions.length > 0
-                                  ? t('admin.selectPositionOption')
-                                  : ''
-                              }
-                            />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {positionOptions.map((position) => (
-                              <SelectItem key={position} value={position}>
-                                {position}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {canDeleteSelectedPosition && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            className="h-8"
-                            onClick={() => setDeleteTargetPosition(positionSelectValue ?? null)}
-                            disabled={isSaving}
-                          >
-                            <Trash2 className="h-3 w-3 mr-1" />
-                            {t('admin.deletePositionOption')}
-                          </Button>
-                        )}
-                      </div>
                     </div>
                     <div className="space-y-1">
                       <Label>{t('auth.role')}</Label>
