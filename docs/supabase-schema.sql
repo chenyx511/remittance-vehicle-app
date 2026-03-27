@@ -1,5 +1,6 @@
 -- 在 Supabase Dashboard → SQL Editor 中执行此脚本
 -- 用于汇款用车审批平台的共享数据存储
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- 用户表（password_hash 用于管理员等需密码验证的用户，SHA-256）
 CREATE TABLE IF NOT EXISTS users (
@@ -106,6 +107,13 @@ CREATE TABLE IF NOT EXISTS notifications (
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- 役割（岗位）选项表，用于跨设备共享下拉项
+CREATE TABLE IF NOT EXISTS role_options (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL UNIQUE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- 索引
 CREATE INDEX IF NOT EXISTS idx_remittance_status ON remittance_requests(status);
 CREATE INDEX IF NOT EXISTS idx_remittance_created ON remittance_requests(created_at DESC);
@@ -113,6 +121,7 @@ CREATE INDEX IF NOT EXISTS idx_vehicle_req_status ON vehicle_requests(status);
 CREATE INDEX IF NOT EXISTS idx_vehicle_req_created ON vehicle_requests(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_created ON notifications(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_role_options_name ON role_options(name);
 
 -- 允许匿名读写（演示用；生产环境应配置 RLS）
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -120,6 +129,7 @@ ALTER TABLE vehicles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE remittance_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE vehicle_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE role_options ENABLE ROW LEVEL SECURITY;
 
 -- 先删除已有 policy，支持重复执行
 DROP POLICY IF EXISTS "Allow all for users" ON users;
@@ -127,12 +137,14 @@ DROP POLICY IF EXISTS "Allow all for vehicles" ON vehicles;
 DROP POLICY IF EXISTS "Allow all for remittance_requests" ON remittance_requests;
 DROP POLICY IF EXISTS "Allow all for vehicle_requests" ON vehicle_requests;
 DROP POLICY IF EXISTS "Allow all for notifications" ON notifications;
+DROP POLICY IF EXISTS "Allow all for role_options" ON role_options;
 
 CREATE POLICY "Allow all for users" ON users FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for vehicles" ON vehicles FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for remittance_requests" ON remittance_requests FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for vehicle_requests" ON vehicle_requests FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow all for notifications" ON notifications FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Allow all for role_options" ON role_options FOR ALL USING (true) WITH CHECK (true);
 
 -- 初始用户数据（预设管理员：admin / 123456，password_hash 为 123456 的 SHA-256）
 INSERT INTO users (id, username, email, password_hash, role, department, position, employment_status, permissions, phone) VALUES
@@ -142,6 +154,14 @@ INSERT INTO users (id, username, email, password_hash, role, department, positio
   ('3', '王五', 'wangwu@company.com', NULL, 'FINANCE', '财务部', '财务', 'ACTIVE', ARRAY['REMITTANCE_PROCESS'], '13800138003'),
   ('4', '赵六', 'zhaoliu@company.com', NULL, 'STAFF', '租赁部', '担当', 'ACTIVE', ARRAY['VEHICLE_USE'], '13800138004')
 ON CONFLICT (id) DO NOTHING;
+
+-- 初始役割选项
+INSERT INTO role_options (name) VALUES
+  ('担当者'),
+  ('上司'),
+  ('财务'),
+  ('管理者')
+ON CONFLICT (name) DO NOTHING;
 
 -- 初始车辆数据
 INSERT INTO vehicles (id, plate_number, brand, model, color, status) VALUES

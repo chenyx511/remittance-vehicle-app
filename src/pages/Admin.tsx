@@ -32,7 +32,6 @@ import type { OperationPermission, User, UserRole } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-const ROLES: UserRole[] = ['STAFF', 'SUPERVISOR', 'FINANCE', 'ADMIN'];
 const CREATE_ROLES: UserRole[] = ['STAFF', 'SUPERVISOR', 'FINANCE']; // 管理员创建账号时不可选 ADMIN
 const ROLE_POSITION_MAP: Record<UserRole, string> = {
   STAFF: '担当',
@@ -42,10 +41,6 @@ const ROLE_POSITION_MAP: Record<UserRole, string> = {
 };
 
 const PERMISSION_OPTIONS: OperationPermission[] = ALL_PERMISSIONS;
-const sortPositionOptions = (items: string[]) =>
-  Array.from(new Set(items.map((item) => item.trim()).filter(Boolean))).sort((a, b) =>
-    a.localeCompare(b, 'zh-Hans-CN'),
-  );
 
 export function Admin() {
   const { t } = useTranslation();
@@ -88,23 +83,24 @@ export function Admin() {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await userApi.getList();
-      setUsers(res.data);
+      const [usersRes, optionsRes] = await Promise.all([
+        userApi.getList(),
+        userApi.getPositionOptions(),
+      ]);
+      setUsers(usersRes.data);
       setProfileDrafts(
         Object.fromEntries(
-          res.data.map((u) => [u.id, { department: u.department || '', position: u.position || '' }]),
+          usersRes.data.map((u) => [u.id, { department: u.department || '', position: u.position || '' }]),
         ),
       );
-      setPositionOptions(
-        sortPositionOptions(res.data.map((u) => u.position || '')),
-      );
+      setPositionOptions(optionsRes.data);
       setPermissionDrafts(
         Object.fromEntries(
-          res.data.map((u) => [u.id, u.permissions && u.permissions.length > 0 ? u.permissions : getDefaultPermissionsByRole(u.role)]),
+          usersRes.data.map((u) => [u.id, u.permissions && u.permissions.length > 0 ? u.permissions : getDefaultPermissionsByRole(u.role)]),
         ),
       );
-    } catch {
-      setError(t('admin.fetchFailed'));
+    } catch (e) {
+      setError(getErrorMessage(e) || t('admin.fetchFailed'));
     } finally {
       setIsLoading(false);
     }
@@ -113,36 +109,6 @@ export function Admin() {
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
-
-  const handleRoleChange = async (userId: string, role: UserRole) => {
-    setIsSaving(true);
-    setError(null);
-    try {
-      const res = await userApi.updateUserRole(userId, role);
-      const nextPermissions = res.data.permissions && res.data.permissions.length > 0
-        ? res.data.permissions
-        : getDefaultPermissionsByRole(role);
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, role, permissions: nextPermissions } : u)),
-      );
-      setPermissionDrafts((prev) => ({ ...prev, [userId]: nextPermissions }));
-      const currentPosition = profileDrafts[userId]?.position?.trim();
-      if (!currentPosition || Object.values(ROLE_POSITION_MAP).includes(currentPosition)) {
-        setProfileDrafts((prev) => ({
-          ...prev,
-          [userId]: {
-            department: prev[userId]?.department ?? '',
-            position: ROLE_POSITION_MAP[role],
-          },
-        }));
-      }
-    } catch (e) {
-      const msg = (e as { message?: string })?.message;
-      setError(msg || t('admin.updateFailed'));
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   const handleProfileChange = (userId: string, key: 'department' | 'position', value: string) => {
     setProfileDrafts((prev) => ({
@@ -241,7 +207,8 @@ export function Admin() {
       });
       await userApi.updateUserPermissions(userId, permissions);
       if (finalPosition) {
-        setPositionOptions((prev) => sortPositionOptions([...prev, finalPosition]));
+        const optionsRes = await userApi.addPositionOption(finalPosition);
+        setPositionOptions(optionsRes.data);
       }
       setUsers((prev) =>
         prev.map((u) =>
@@ -269,13 +236,7 @@ export function Admin() {
     setIsSaving(true);
     setError(null);
     try {
-      const affected = users.filter((u) => (u.position || '').trim() === targetOption);
-      for (const u of affected) {
-        await userApi.updateUserProfile(u.id, {
-          department: u.department,
-          position: undefined,
-        });
-      }
+      const optionsRes = await userApi.deletePositionOption(targetOption);
       setUsers((prev) =>
         prev.map((u) =>
           (u.position || '').trim() === targetOption
@@ -291,7 +252,7 @@ export function Admin() {
           ]),
         ),
       );
-      setPositionOptions((prev) => prev.filter((v) => v !== targetOption));
+      setPositionOptions(optionsRes.data);
       toast.success(t('admin.positionOptionDeleted'));
       return true;
     } catch (e) {
@@ -308,16 +269,25 @@ export function Admin() {
     if (deleted) setDeleteTargetPosition(null);
   };
 
-  const handleAddRoleOption = () => {
+  const handleAddRoleOption = async () => {
     const next = newRoleName.trim();
     if (!next) return;
+    setError(null);
     if (positionOptions.includes(next)) {
       setError(t('admin.roleExists'));
       return;
     }
-    setPositionOptions((prev) => sortPositionOptions([...prev, next]));
-    setNewRoleName('');
-    toast.success(t('admin.roleAdded'));
+    setIsSaving(true);
+    try {
+      const res = await userApi.addPositionOption(next);
+      setPositionOptions(res.data);
+      setNewRoleName('');
+      toast.success(t('admin.roleAdded'));
+    } catch (e) {
+      setError(getErrorMessage(e) || t('admin.updateFailed'));
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleStartEditRoleOption = (role: string) => {
@@ -330,6 +300,7 @@ export function Admin() {
     const from = editingRoleName.trim();
     const to = editingRoleValue.trim();
     if (!to) return;
+    setError(null);
     if (from === to) {
       setEditingRoleName(null);
       setEditingRoleValue('');
@@ -343,13 +314,7 @@ export function Admin() {
     setIsSaving(true);
     setError(null);
     try {
-      const affected = users.filter((u) => (u.position || '').trim() === from);
-      for (const u of affected) {
-        await userApi.updateUserProfile(u.id, {
-          department: u.department,
-          position: to,
-        });
-      }
+      const optionsRes = await userApi.renamePositionOption(from, to);
 
       setUsers((prev) =>
         prev.map((u) => ((u.position || '').trim() === from ? { ...u, position: to } : u)),
@@ -362,9 +327,7 @@ export function Admin() {
           ]),
         ),
       );
-      setPositionOptions((prev) =>
-        sortPositionOptions(prev.map((role) => (role === from ? to : role))),
-      );
+      setPositionOptions(optionsRes.data);
       setEditingRoleName(null);
       setEditingRoleValue('');
       toast.success(t('admin.roleUpdated'));
@@ -745,6 +708,10 @@ export function Admin() {
           ) : (
             <div className="space-y-4">
               {users.map((user) => {
+                const currentDraftPosition = (profileDrafts[user.id]?.position ?? '').trim();
+                const selectedPosition = positionOptions.includes(currentDraftPosition)
+                  ? currentDraftPosition
+                  : undefined;
                 return (
                   <div
                     key={user.id}
@@ -779,19 +746,19 @@ export function Admin() {
                   </div>
 
                   <div className="space-y-1">
-                    <Label>{t('auth.role')}</Label>
+                    <Label>{t('admin.position')}</Label>
                     <Select
-                      value={user.role}
-                      onValueChange={(v) => handleRoleChange(user.id, v as UserRole)}
-                      disabled={isSaving || user.id === 'admin'}
+                      value={selectedPosition}
+                      onValueChange={(value) => handleProfileChange(user.id, 'position', value)}
+                      disabled={isSaving || positionOptions.length === 0}
                     >
                       <SelectTrigger className="w-full md:w-48">
-                        <SelectValue />
+                        <SelectValue placeholder={t('admin.selectPositionOption')} />
                       </SelectTrigger>
                       <SelectContent>
-                        {ROLES.map((r) => (
-                          <SelectItem key={r} value={r}>
-                            {t(`roles.${r}`)}
+                        {positionOptions.map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {role}
                           </SelectItem>
                         ))}
                       </SelectContent>

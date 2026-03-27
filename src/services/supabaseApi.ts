@@ -17,6 +17,16 @@ import { hasPermission, getDefaultPermissionsByRole } from '@/lib/permissions';
 if (!supabase) throw new Error('Supabase is not configured');
 
 let currentUser: User | null = null;
+const DEFAULT_POSITION_OPTIONS = ['担当者', '上司', '财务', '管理者'];
+const sortPositionOptions = (items: string[]) =>
+  Array.from(new Set(items.map((item) => item.trim()).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b, 'zh-Hans-CN'),
+  );
+
+function isMissingRoleOptionsTableError(error: { message?: string } | null | undefined) {
+  const msg = (error?.message || '').toLowerCase();
+  return msg.includes('role_options') && (msg.includes('does not exist') || msg.includes('schema cache'));
+}
 
 export const setMockCurrentUser = (user: User | null) => {
   currentUser = user;
@@ -923,6 +933,87 @@ export const userApi = {
       message: 'success',
       data: (data || []).map((r) => toUser(r)!).filter(Boolean),
     };
+  },
+
+  getPositionOptions: async (): Promise<ApiResponse<string[]>> => {
+    requirePermission('USER_MANAGE', '无用户管理权限');
+    const [{ data: usersData, error: usersError }, { data: optionsData, error: optionsError }] = await Promise.all([
+      supabase!.from('users').select('position'),
+      supabase!.from('role_options').select('name'),
+    ]);
+    if (usersError) throw new Error(usersError.message);
+    if (optionsError && !isMissingRoleOptionsTableError(optionsError)) {
+      throw new Error(optionsError.message);
+    }
+    const options = sortPositionOptions([
+      ...DEFAULT_POSITION_OPTIONS,
+      ...((optionsData || []).map((row) => String((row as { name?: string }).name || ''))),
+      ...((usersData || []).map((row) => String((row as { position?: string }).position || ''))),
+    ]);
+    return { code: 200, message: 'success', data: options };
+  },
+
+  addPositionOption: async (name: string): Promise<ApiResponse<string[]>> => {
+    requirePermission('USER_MANAGE', '无用户管理权限');
+    const next = name.trim();
+    if (!next) return userApi.getPositionOptions();
+    const { error } = await supabase!.from('role_options').upsert({ name: next }, { onConflict: 'name' });
+    if (error) {
+      if (isMissingRoleOptionsTableError(error)) {
+        throw new Error('数据库缺少 role_options 表，请执行 docs/supabase-schema.sql 的最新脚本');
+      }
+      throw new Error(error.message);
+    }
+    return userApi.getPositionOptions();
+  },
+
+  renamePositionOption: async (from: string, to: string): Promise<ApiResponse<string[]>> => {
+    requirePermission('USER_MANAGE', '无用户管理权限');
+    const fromName = from.trim();
+    const toName = to.trim();
+    if (!fromName || !toName || fromName === toName) return userApi.getPositionOptions();
+
+    const { error: usersError } = await supabase!
+      .from('users')
+      .update({ position: toName })
+      .eq('position', fromName);
+    if (usersError) throw new Error(usersError.message);
+
+    const { error: optionsError } = await supabase!
+      .from('role_options')
+      .update({ name: toName })
+      .eq('name', fromName);
+    if (optionsError) {
+      if (isMissingRoleOptionsTableError(optionsError)) {
+        throw new Error('数据库缺少 role_options 表，请执行 docs/supabase-schema.sql 的最新脚本');
+      }
+      throw new Error(optionsError.message);
+    }
+    return userApi.getPositionOptions();
+  },
+
+  deletePositionOption: async (name: string): Promise<ApiResponse<string[]>> => {
+    requirePermission('USER_MANAGE', '无用户管理权限');
+    const target = name.trim();
+    if (!target) return userApi.getPositionOptions();
+
+    const { error: usersError } = await supabase!
+      .from('users')
+      .update({ position: null })
+      .eq('position', target);
+    if (usersError) throw new Error(usersError.message);
+
+    const { error: optionsError } = await supabase!
+      .from('role_options')
+      .delete()
+      .eq('name', target);
+    if (optionsError) {
+      if (isMissingRoleOptionsTableError(optionsError)) {
+        throw new Error('数据库缺少 role_options 表，请执行 docs/supabase-schema.sql 的最新脚本');
+      }
+      throw new Error(optionsError.message);
+    }
+    return userApi.getPositionOptions();
   },
 
   updateUserRole: async (

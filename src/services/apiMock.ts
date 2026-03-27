@@ -71,6 +71,16 @@ function requirePermission(permission: OperationPermission, deniedMessage = '无
   if (!hasPermission(currentUser, permission)) throw new Error(deniedMessage);
 }
 
+const DEFAULT_POSITION_OPTIONS = ['担当者', '上司', '财务', '管理者'];
+const sortPositionOptions = (items: string[]) =>
+  Array.from(new Set(items.map((item) => item.trim()).filter(Boolean))).sort((a, b) =>
+    a.localeCompare(b, 'zh-Hans-CN'),
+  );
+const mockPositionOptions: string[] = sortPositionOptions([
+  ...DEFAULT_POSITION_OPTIONS,
+  ...mockUsers.map((u) => u.position || ''),
+]);
+
 /** 申请可见性：担当只能看自己的，上司/财务/管理员可看全部 */
 function canViewRemittance(item: RemittanceRequest): boolean {
   if (!currentUser) return false;
@@ -895,6 +905,67 @@ export const userApi = {
       message: 'success',
       data: supervisors,
     };
+  },
+
+  getPositionOptions: async (): Promise<ApiResponse<string[]>> => {
+    await delay(150);
+    requirePermission('USER_MANAGE', '无用户管理权限');
+    return {
+      code: 200,
+      message: 'success',
+      data: [...mockPositionOptions],
+    };
+  },
+
+  addPositionOption: async (name: string): Promise<ApiResponse<string[]>> => {
+    await delay(150);
+    requirePermission('USER_MANAGE', '无用户管理权限');
+    const next = name.trim();
+    if (!next) return { code: 200, message: 'success', data: [...mockPositionOptions] };
+    if (!mockPositionOptions.includes(next)) {
+      mockPositionOptions.splice(0, mockPositionOptions.length, ...sortPositionOptions([...mockPositionOptions, next]));
+    }
+    return { code: 200, message: '更新成功', data: [...mockPositionOptions] };
+  },
+
+  renamePositionOption: async (from: string, to: string): Promise<ApiResponse<string[]>> => {
+    await delay(200);
+    requirePermission('USER_MANAGE', '无用户管理权限');
+    const fromName = from.trim();
+    const toName = to.trim();
+    if (!fromName || !toName) return { code: 200, message: 'success', data: [...mockPositionOptions] };
+    if (fromName === toName) return { code: 200, message: 'success', data: [...mockPositionOptions] };
+    if (!mockPositionOptions.includes(fromName)) {
+      throw new Error('役割不存在');
+    }
+    if (mockPositionOptions.includes(toName)) {
+      throw new Error('该役割已存在');
+    }
+    mockUsers.forEach((u) => {
+      if ((u.position || '').trim() === fromName) u.position = toName;
+    });
+    mockPositionOptions.splice(
+      0,
+      mockPositionOptions.length,
+      ...sortPositionOptions(mockPositionOptions.map((n) => (n === fromName ? toName : n))),
+    );
+    return { code: 200, message: '更新成功', data: [...mockPositionOptions] };
+  },
+
+  deletePositionOption: async (name: string): Promise<ApiResponse<string[]>> => {
+    await delay(200);
+    requirePermission('USER_MANAGE', '无用户管理权限');
+    const target = name.trim();
+    if (!target) return { code: 200, message: 'success', data: [...mockPositionOptions] };
+    mockUsers.forEach((u) => {
+      if ((u.position || '').trim() === target) u.position = undefined;
+    });
+    mockPositionOptions.splice(
+      0,
+      mockPositionOptions.length,
+      ...mockPositionOptions.filter((n) => n !== target),
+    );
+    return { code: 200, message: '删除成功', data: [...mockPositionOptions] };
   },
 
   updateUserRole: async (
