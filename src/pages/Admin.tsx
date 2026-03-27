@@ -742,7 +742,7 @@ export function Admin() {
                               placeholder={
                                 positionOptions.length > 0
                                   ? t('admin.selectPositionOption')
-                                  : t('admin.noPositionOptions')
+                                  : ''
                               }
                             />
                           </SelectTrigger>
