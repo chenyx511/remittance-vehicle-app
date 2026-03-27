@@ -1,5 +1,6 @@
 import type {
   User,
+  OperationPermission,
   RemittanceRequest,
   VehicleRequest,
   Vehicle,
@@ -123,6 +124,7 @@ export const authApi = {
     password: string;
     department?: string;
     position?: string;
+    permissions?: OperationPermission[];
     role: 'STAFF' | 'SUPERVISOR' | 'FINANCE';
   }): Promise<ApiResponse<User>> => {
     await delay(500);
@@ -148,6 +150,7 @@ export const authApi = {
       department: data.department,
       position: data.position,
       employmentStatus: 'ACTIVE',
+      permissions: data.permissions || [],
       phone: '',
     };
 
@@ -891,6 +894,17 @@ export const userApi = {
     if (!user) throw new Error('用户不存在');
     user.department = data.department;
     user.position = data.position;
+    return { code: 200, message: '更新成功', data: user };
+  },
+
+  updateUserPermissions: async (
+    userId: string,
+    permissions: OperationPermission[],
+  ): Promise<ApiResponse<User>> => {
+    await delay(300);
+    const user = mockUsers.find((u) => u.id === userId);
+    if (!user) throw new Error('用户不存在');
+    user.permissions = [...permissions];
     return { code: 200, message: '更新成功', data: user };
   },
 

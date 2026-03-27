@@ -1,5 +1,6 @@
 import type {
   User,
+  OperationPermission,
   RemittanceRequest,
   VehicleRequest,
   Vehicle,
@@ -43,6 +44,7 @@ function toUser(row: Record<string, unknown> | null): User | undefined {
     department: row.department as string | undefined,
     position: row.position as string | undefined,
     employmentStatus: (row.employment_status as User['employmentStatus']) || 'ACTIVE',
+    permissions: (row.permissions as OperationPermission[] | null) || [],
     phone: row.phone as string | undefined,
     avatarUrl: row.avatar_url as string | undefined,
   };
@@ -183,6 +185,7 @@ export const authApi = {
     password: string;
     department?: string;
     position?: string;
+    permissions?: OperationPermission[];
     role: 'STAFF' | 'SUPERVISOR' | 'FINANCE';
   }): Promise<ApiResponse<User>> => {
     // 仅管理员可创建账号
@@ -211,6 +214,7 @@ export const authApi = {
       department: data.department,
       position: data.position,
       employmentStatus: 'ACTIVE',
+      permissions: data.permissions || [],
       phone: '',
     };
     const { error } = await supabase!.from('users').insert({
@@ -222,6 +226,7 @@ export const authApi = {
       department: newUser.department,
       position: newUser.position,
       employment_status: newUser.employmentStatus,
+      permissions: newUser.permissions,
     });
     if (error) throw new Error(error.message);
     return { code: 200, message: '注册成功', data: newUser };
@@ -923,6 +928,22 @@ export const userApi = {
         department: data.department ?? null,
         position: data.position ?? null,
       })
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw new Error(error.message);
+    const user = toUser(updated);
+    if (!user) throw new Error('更新失败');
+    return { code: 200, message: '更新成功', data: user };
+  },
+
+  updateUserPermissions: async (
+    userId: string,
+    permissions: OperationPermission[],
+  ): Promise<ApiResponse<User>> => {
+    const { data: updated, error } = await supabase!
+      .from('users')
+      .update({ permissions })
       .eq('id', userId)
       .select()
       .single();

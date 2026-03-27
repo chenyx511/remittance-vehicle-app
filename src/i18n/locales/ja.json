@@ -415,7 +415,17 @@
     "deleteUser": "アカウント削除",
     "userDeactivated": "アカウントを停止しました",
     "userReactivated": "アカウントを再有効化しました",
-    "userDeleted": "アカウントを削除しました"
+    "userDeleted": "アカウントを削除しました",
+    "permissions": "操作権限",
+    "permissionsUpdated": "権限を更新しました",
+    "profileAndPermissionsUpdated": "部署・役職・権限を更新しました",
+    "permissionsMap": {
+      "REMITTANCE_APPROVE": "送金承認",
+      "REMITTANCE_PROCESS": "送金処理",
+      "VEHICLE_APPROVE": "配車承認",
+      "VEHICLE_USE": "車両利用",
+      "USER_MANAGE": "ユーザー管理"
+    }
   },
   "errors": {
     "generic": "エラーが発生しました",

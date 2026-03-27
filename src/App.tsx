@@ -17,6 +17,7 @@ import { Profile } from '@/pages/Profile';
 import { Admin } from '@/pages/Admin';
 import { useAuthStore } from '@/stores/authStore';
 import { useEffect, useState } from 'react';
+import { hasPermission } from '@/lib/permissions';
 
 // Protected Route Component
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -57,7 +58,7 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isAuthenticated } = useAuthStore();
   if (!isAuthenticated) return <Navigate to="/" replace />;
-  if (user?.role !== 'ADMIN') return <Navigate to="/dashboard" replace />;
+  if (!hasPermission(user, 'USER_MANAGE')) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
 }
 

@@ -33,6 +33,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuthStore } from '@/stores/authStore';
 import { useNotificationStore } from '@/stores/notificationStore';
+import { hasPermission } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
 
 interface NavItem {
@@ -54,7 +55,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { path: '/remittances', labelKey: 'nav.remittance', icon: Banknote },
     { path: '/vehicles', labelKey: 'nav.vehicle', icon: Car },
     { path: '/notifications', labelKey: 'nav.notifications', icon: Bell },
-    ...(user?.role === 'ADMIN'
+    ...(hasPermission(user, 'USER_MANAGE')
       ? [{ path: '/admin', labelKey: 'nav.admin', icon: Shield }]
       : []),
   ];

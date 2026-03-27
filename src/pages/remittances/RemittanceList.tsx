@@ -25,6 +25,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { remittanceApi } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
+import { hasPermission } from '@/lib/permissions';
 import { formatMoneyByLanguage, getDisplayCurrencyCode } from '@/lib/currency';
 import type { RemittanceRequest } from '@/types';
 
@@ -123,11 +124,11 @@ export function RemittanceList() {
   };
 
   const canApprove = (request: RemittanceRequest) => {
-    return user?.role === 'SUPERVISOR' && request.status === 'PENDING';
+    return hasPermission(user, 'REMITTANCE_APPROVE') && request.status === 'PENDING';
   };
 
   const canComplete = (request: RemittanceRequest) => {
-    return user?.role === 'FINANCE' && request.status === 'SUPERVISOR_APPROVED';
+    return hasPermission(user, 'REMITTANCE_PROCESS') && request.status === 'SUPERVISOR_APPROVED';
   };
 
   return (

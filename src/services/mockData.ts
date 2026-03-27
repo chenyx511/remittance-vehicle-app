@@ -26,6 +26,7 @@ export const mockUsers: User[] = [
     department: '管理部',
     position: '管理员',
     employmentStatus: 'ACTIVE',
+    permissions: ['USER_MANAGE', 'REMITTANCE_APPROVE', 'REMITTANCE_PROCESS', 'VEHICLE_APPROVE', 'VEHICLE_USE'],
     phone: '13800138000',
   },
   {
@@ -36,6 +37,7 @@ export const mockUsers: User[] = [
     department: '不动产部',
     position: '担当',
     employmentStatus: 'ACTIVE',
+    permissions: ['VEHICLE_USE'],
     phone: '13800138001',
   },
   {
@@ -46,6 +48,7 @@ export const mockUsers: User[] = [
     department: '不动产部',
     position: '上司',
     employmentStatus: 'ACTIVE',
+    permissions: ['REMITTANCE_APPROVE', 'VEHICLE_APPROVE'],
     phone: '13800138002',
   },
   {
@@ -56,6 +59,7 @@ export const mockUsers: User[] = [
     department: '财务部',
     position: '财务',
     employmentStatus: 'ACTIVE',
+    permissions: ['REMITTANCE_PROCESS'],
     phone: '13800138003',
   },
   {
@@ -66,6 +70,7 @@ export const mockUsers: User[] = [
     department: '租赁部',
     position: '担当',
     employmentStatus: 'ACTIVE',
+    permissions: ['VEHICLE_USE'],
     phone: '13800138004',
   },
 ];

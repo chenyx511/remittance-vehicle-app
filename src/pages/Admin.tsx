@@ -23,15 +23,25 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
 import { authApi, userApi } from '@/services/api';
 import { getErrorMessage } from '@/lib/error';
+import { ALL_PERMISSIONS, getDefaultPermissionsByRole } from '@/lib/permissions';
 import { useAuthStore } from '@/stores/authStore';
-import type { User, UserRole } from '@/types';
+import type { OperationPermission, User, UserRole } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 const ROLES: UserRole[] = ['STAFF', 'SUPERVISOR', 'FINANCE', 'ADMIN'];
 const CREATE_ROLES: UserRole[] = ['STAFF', 'SUPERVISOR', 'FINANCE']; // 管理员创建账号时不可选 ADMIN
+const ROLE_POSITION_MAP: Record<UserRole, string> = {
+  STAFF: '担当',
+  SUPERVISOR: '上司',
+  FINANCE: '财务',
+  ADMIN: '管理员',
+};
+
+const PERMISSION_OPTIONS: OperationPermission[] = ALL_PERMISSIONS;
 
 export function Admin() {
   const { t } = useTranslation();
@@ -49,6 +59,7 @@ export function Admin() {
   });
   const [isUpdatingCreds, setIsUpdatingCreds] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [permissionDrafts, setPermissionDrafts] = useState<Record<string, OperationPermission[]>>({});
   const [createForm, setCreateForm] = useState({
     username: '',
     email: '',
@@ -56,6 +67,7 @@ export function Admin() {
     confirmPassword: '',
     department: '',
     position: '',
+    permissions: getDefaultPermissionsByRole('STAFF') as OperationPermission[],
     role: 'STAFF' as UserRole,
   });
   const [isCreating, setIsCreating] = useState(false);
@@ -77,6 +89,11 @@ export function Admin() {
           res.data.map((u) => [u.id, { department: u.department || '', position: u.position || '' }]),
         ),
       );
+      setPermissionDrafts(
+        Object.fromEntries(
+          res.data.map((u) => [u.id, u.permissions && u.permissions.length > 0 ? u.permissions : getDefaultPermissionsByRole(u.role)]),
+        ),
+      );
     } catch {
       setError(t('admin.fetchFailed'));
     } finally {
@@ -89,9 +106,21 @@ export function Admin() {
     setError(null);
     try {
       await userApi.updateUserRole(userId, role);
+      const defaultPermissions = getDefaultPermissionsByRole(role);
       setUsers((prev) =>
         prev.map((u) => (u.id === userId ? { ...u, role } : u)),
       );
+      setPermissionDrafts((prev) => ({ ...prev, [userId]: defaultPermissions }));
+      const currentPosition = profileDrafts[userId]?.position?.trim();
+      if (!currentPosition || Object.values(ROLE_POSITION_MAP).includes(currentPosition)) {
+        setProfileDrafts((prev) => ({
+          ...prev,
+          [userId]: {
+            department: prev[userId]?.department ?? '',
+            position: ROLE_POSITION_MAP[role],
+          },
+        }));
+      }
     } catch (e) {
       const msg = (e as { message?: string })?.message;
       setError(msg || t('admin.updateFailed'));
@@ -109,34 +138,6 @@ export function Admin() {
         [key]: value,
       },
     }));
-  };
-
-  const handleProfileSave = async (userId: string) => {
-    setIsSaving(true);
-    setError(null);
-    try {
-      const draft = profileDrafts[userId] || { department: '', position: '' };
-      await userApi.updateUserProfile(userId, {
-        department: draft.department.trim() || undefined,
-        position: draft.position.trim() || undefined,
-      });
-      setUsers((prev) =>
-        prev.map((u) =>
-          u.id === userId
-            ? {
-                ...u,
-                department: draft.department.trim() || undefined,
-                position: draft.position.trim() || undefined,
-              }
-            : u,
-        ),
-      );
-      toast.success(t('admin.profileUpdated'));
-    } catch (e) {
-      setError(getErrorMessage(e) || t('admin.updateFailed'));
-    } finally {
-      setIsSaving(false);
-    }
   };
 
   const handleDeactivate = async (userId: string) => {
@@ -183,6 +184,47 @@ export function Admin() {
         return next;
       });
       toast.success(t('admin.userDeleted'));
+    } catch (e) {
+      setError(getErrorMessage(e) || t('admin.updateFailed'));
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handlePermissionToggle = (userId: string, permission: OperationPermission, checked: boolean) => {
+    setPermissionDrafts((prev) => {
+      const current = prev[userId] ?? [];
+      const next = checked
+        ? Array.from(new Set([...current, permission]))
+        : current.filter((p) => p !== permission);
+      return { ...prev, [userId]: next };
+    });
+  };
+
+  const handleSaveAll = async (userId: string) => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      const draft = profileDrafts[userId] || { department: '', position: '' };
+      const permissions = permissionDrafts[userId] ?? [];
+      await userApi.updateUserProfile(userId, {
+        department: draft.department.trim() || undefined,
+        position: draft.position.trim() || undefined,
+      });
+      await userApi.updateUserPermissions(userId, permissions);
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId
+            ? {
+                ...u,
+                department: draft.department.trim() || undefined,
+                position: draft.position.trim() || undefined,
+                permissions,
+              }
+            : u,
+        ),
+      );
+      toast.success(t('admin.profileAndPermissionsUpdated'));
     } catch (e) {
       setError(getErrorMessage(e) || t('admin.updateFailed'));
     } finally {
@@ -260,6 +302,7 @@ export function Admin() {
         password: createForm.password,
         department: createForm.department.trim() || undefined,
         position: createForm.position.trim() || undefined,
+        permissions: createForm.permissions,
         role: createForm.role as 'STAFF' | 'SUPERVISOR' | 'FINANCE',
       });
       toast.success(t('admin.createUserSuccess'));
@@ -271,6 +314,7 @@ export function Admin() {
         confirmPassword: '',
         department: '',
         position: '',
+        permissions: getDefaultPermissionsByRole('STAFF'),
         role: 'STAFF',
       });
       fetchUsers();
@@ -485,9 +529,15 @@ export function Admin() {
                     <Label htmlFor="create-role">{t('auth.role')} *</Label>
                     <Select
                       value={createForm.role}
-                      onValueChange={(v) =>
-                        setCreateForm((p) => ({ ...p, role: v as UserRole }))
-                      }
+                      onValueChange={(v) => {
+                        const role = v as UserRole;
+                        setCreateForm((p) => ({
+                          ...p,
+                          role,
+                          position: p.position || ROLE_POSITION_MAP[role],
+                          permissions: getDefaultPermissionsByRole(role),
+                        }));
+                      }}
                       disabled={isCreating}
                     >
                       <SelectTrigger>
@@ -501,6 +551,28 @@ export function Admin() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('admin.permissions')}</Label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 rounded-md border p-3">
+                      {PERMISSION_OPTIONS.map((perm) => (
+                        <label key={perm} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={createForm.permissions.includes(perm)}
+                            onCheckedChange={(checked) => {
+                              const isChecked = checked === true;
+                              setCreateForm((prev) => ({
+                                ...prev,
+                                permissions: isChecked
+                                  ? Array.from(new Set([...prev.permissions, perm]))
+                                  : prev.permissions.filter((p) => p !== perm),
+                              }));
+                            }}
+                          />
+                          {t(`admin.permissionsMap.${perm}`)}
+                        </label>
+                      ))}
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button
@@ -587,11 +659,29 @@ export function Admin() {
                     </div>
                   </div>
 
+                  <div className="space-y-1">
+                    <Label>{t('admin.permissions')}</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-2 rounded-md border p-3">
+                      {PERMISSION_OPTIONS.map((perm) => (
+                        <label key={perm} className="flex items-center gap-2 text-sm">
+                          <Checkbox
+                            checked={(permissionDrafts[user.id] ?? []).includes(perm)}
+                            onCheckedChange={(checked) =>
+                              handlePermissionToggle(user.id, perm, checked === true)
+                            }
+                            disabled={isSaving || user.id === 'admin'}
+                          />
+                          {t(`admin.permissionsMap.${perm}`)}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="flex flex-wrap items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleProfileSave(user.id)}
+                      onClick={() => handleSaveAll(user.id)}
                       disabled={isSaving}
                     >
                       <Save className="h-4 w-4 mr-2" />

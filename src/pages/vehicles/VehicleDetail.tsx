@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { vehicleApi } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
+import { hasPermission } from '@/lib/permissions';
 import type { VehicleRequest } from '@/types';
 
 export function VehicleDetail() {
@@ -116,15 +117,15 @@ export function VehicleDetail() {
   };
 
   const canApprove = () => {
-    return user?.role === 'SUPERVISOR' && request?.status === 'PENDING';
+    return hasPermission(user, 'VEHICLE_APPROVE') && request?.status === 'PENDING';
   };
 
   const canStart = () => {
-    return request?.applicantId === user?.id && request?.status === 'APPROVED';
+    return hasPermission(user, 'VEHICLE_USE') && request?.applicantId === user?.id && request?.status === 'APPROVED';
   };
 
   const canComplete = () => {
-    return request?.applicantId === user?.id && request?.status === 'IN_USE';
+    return hasPermission(user, 'VEHICLE_USE') && request?.applicantId === user?.id && request?.status === 'IN_USE';
   };
 
   if (isLoading) {

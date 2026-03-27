@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { remittanceApi } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
+import { hasPermission } from '@/lib/permissions';
 import { formatMoneyByLanguage, getDisplayCurrencyCode } from '@/lib/currency';
 import type { RemittanceRequest } from '@/types';
 
@@ -161,11 +162,11 @@ export function RemittanceDetail() {
   };
 
   const canApprove = () => {
-    return user?.role === 'SUPERVISOR' && request?.status === 'PENDING';
+    return hasPermission(user, 'REMITTANCE_APPROVE') && request?.status === 'PENDING';
   };
 
   const canComplete = () => {
-    return user?.role === 'FINANCE' && request?.status === 'SUPERVISOR_APPROVED';
+    return hasPermission(user, 'REMITTANCE_PROCESS') && request?.status === 'SUPERVISOR_APPROVED';
   };
 
   if (isLoading) {

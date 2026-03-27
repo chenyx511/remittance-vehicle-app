@@ -415,7 +415,17 @@
     "deleteUser": "删除账号",
     "userDeactivated": "账号已停用",
     "userReactivated": "账号已恢复",
-    "userDeleted": "账号已删除"
+    "userDeleted": "账号已删除",
+    "permissions": "操作权限",
+    "permissionsUpdated": "权限已更新",
+    "profileAndPermissionsUpdated": "部门/岗位/权限已更新",
+    "permissionsMap": {
+      "REMITTANCE_APPROVE": "汇款审批",
+      "REMITTANCE_PROCESS": "汇款处理",
+      "VEHICLE_APPROVE": "用车审批",
+      "VEHICLE_USE": "用车执行",
+      "USER_MANAGE": "用户管理"
+    }
   },
   "errors": {
     "generic": "发生错误",

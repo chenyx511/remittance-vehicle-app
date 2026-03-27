@@ -1,5 +1,11 @@
 // 用户角色
 export type UserRole = 'STAFF' | 'SUPERVISOR' | 'FINANCE' | 'ADMIN';
+export type OperationPermission =
+  | 'REMITTANCE_APPROVE'
+  | 'REMITTANCE_PROCESS'
+  | 'VEHICLE_APPROVE'
+  | 'VEHICLE_USE'
+  | 'USER_MANAGE';
 
 // 用户
 export interface User {
@@ -10,6 +16,7 @@ export interface User {
   department?: string;
   position?: string;
   employmentStatus?: 'ACTIVE' | 'INACTIVE';
+  permissions?: OperationPermission[];
   phone?: string;
   avatarUrl?: string;
 }

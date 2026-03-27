@@ -26,6 +26,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { vehicleApi } from '@/services/api';
 import { useAuthStore } from '@/stores/authStore';
+import { hasPermission } from '@/lib/permissions';
 import type { VehicleRequest } from '@/types';
 
 export function VehicleList() {
@@ -120,15 +121,15 @@ export function VehicleList() {
   };
 
   const canApprove = (request: VehicleRequest) => {
-    return user?.role === 'SUPERVISOR' && request.status === 'PENDING';
+    return hasPermission(user, 'VEHICLE_APPROVE') && request.status === 'PENDING';
   };
 
   const canStart = (request: VehicleRequest) => {
-    return request.applicantId === user?.id && request.status === 'APPROVED';
+    return hasPermission(user, 'VEHICLE_USE') && request.applicantId === user?.id && request.status === 'APPROVED';
   };
 
   const canComplete = (request: VehicleRequest) => {
-    return request.applicantId === user?.id && request.status === 'IN_USE';
+    return hasPermission(user, 'VEHICLE_USE') && request.applicantId === user?.id && request.status === 'IN_USE';
   };
 
   const openDialog = (
