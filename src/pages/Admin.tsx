@@ -73,7 +73,7 @@ export function Admin() {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [profileDrafts, setProfileDrafts] = useState<Record<string, { department: string; position: string }>>({});
-  const [positionOptions, setPositionOptions] = useState<string[]>([]);
+  const [, setPositionOptions] = useState<string[]>([]);
   const [deleteTargetUser, setDeleteTargetUser] = useState<User | null>(null);
   const [deleteTargetPosition, setDeleteTargetPosition] = useState<string | null>(null);
   const protectedPositions = new Set([ROLE_POSITION_MAP.ADMIN, '管理员', '管理者']);
