@@ -425,7 +425,8 @@
       "VEHICLE_APPROVE": "用车审批",
       "VEHICLE_USE": "用车执行",
       "USER_MANAGE": "用户管理"
-    }
+    },
+    "deletePositionOption": "删除该岗位选项"
   },
   "errors": {
     "generic": "发生错误",

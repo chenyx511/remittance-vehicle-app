@@ -425,7 +425,8 @@
       "VEHICLE_APPROVE": "配車承認",
       "VEHICLE_USE": "車両利用",
       "USER_MANAGE": "ユーザー管理"
-    }
+    },
+    "deletePositionOption": "この役職候補を削除"
   },
   "errors": {
     "generic": "エラーが発生しました",

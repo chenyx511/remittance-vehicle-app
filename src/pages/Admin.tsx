@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Shield, Loader2, KeyRound, UserPlus, Save, UserX, RotateCcw, Trash2 } from 'lucide-react';
+import { ArrowLeft, Shield, Loader2, KeyRound, UserPlus, Save, UserX, RotateCcw, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -73,6 +73,7 @@ export function Admin() {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [profileDrafts, setProfileDrafts] = useState<Record<string, { department: string; position: string }>>({});
+  const [positionOptions, setPositionOptions] = useState<string[]>([]);
 
   useEffect(() => {
     fetchUsers();
@@ -87,6 +88,16 @@ export function Admin() {
       setProfileDrafts(
         Object.fromEntries(
           res.data.map((u) => [u.id, { department: u.department || '', position: u.position || '' }]),
+        ),
+      );
+      setPositionOptions(
+        Array.from(
+          new Set(
+            [
+              ...Object.values(ROLE_POSITION_MAP),
+              ...res.data.map((u) => (u.position || '').trim()).filter(Boolean),
+            ],
+          ),
         ),
       );
       setPermissionDrafts(
@@ -130,6 +141,12 @@ export function Admin() {
   };
 
   const handleProfileChange = (userId: string, key: 'department' | 'position', value: string) => {
+    if (key === 'position') {
+      const trimmed = value.trim();
+      if (trimmed) {
+        setPositionOptions((prev) => (prev.includes(trimmed) ? prev : [...prev, trimmed]));
+      }
+    }
     setProfileDrafts((prev) => ({
       ...prev,
       [userId]: {
@@ -230,6 +247,18 @@ export function Admin() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleDeletePositionOption = (option: string) => {
+    setPositionOptions((prev) => prev.filter((v) => v !== option));
+    setProfileDrafts((prev) =>
+      Object.fromEntries(
+        Object.entries(prev).map(([uid, draft]) => [
+          uid,
+          draft.position === option ? { ...draft, position: '' } : draft,
+        ]),
+      ),
+    );
   };
 
   const isPresetAdmin = currentUser?.id === 'admin' && currentUser?.role === 'ADMIN';
@@ -618,25 +647,38 @@ export function Admin() {
                       </div>
                       <p className="text-sm text-muted-foreground truncate">{user.email}</p>
                     </div>
-                    <Select
-                      value={user.role}
-                      onValueChange={(v) => handleRoleChange(user.id, v as UserRole)}
-                      disabled={isSaving || user.id === 'admin'}
-                    >
-                      <SelectTrigger className="w-32">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {ROLES.map((r) => (
-                          <SelectItem key={r} value={r}>
-                            {t(`roles.${r}`)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2 w-56">
+                      <Select
+                        value={profileDrafts[user.id]?.position ?? ''}
+                        onValueChange={(v) => handleProfileChange(user.id, 'position', v)}
+                        disabled={isSaving}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t('admin.positionPlaceholder')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {positionOptions.map((position) => (
+                            <SelectItem key={position} value={position}>
+                              {position}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => handleDeletePositionOption(profileDrafts[user.id]?.position || '')}
+                        disabled={isSaving || !(profileDrafts[user.id]?.position || '').trim()}
+                        title={t('admin.deletePositionOption')}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="space-y-1">
                       <Label htmlFor={`dept-${user.id}`}>{t('auth.department')}</Label>
                       <Input
@@ -656,6 +698,25 @@ export function Admin() {
                         disabled={isSaving}
                         placeholder={t('admin.positionPlaceholder')}
                       />
+                    </div>
+                    <div className="space-y-1">
+                      <Label>{t('auth.role')}</Label>
+                      <Select
+                        value={user.role}
+                        onValueChange={(v) => handleRoleChange(user.id, v as UserRole)}
+                        disabled={isSaving || user.id === 'admin'}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ROLES.map((r) => (
+                            <SelectItem key={r} value={r}>
+                              {t(`roles.${r}`)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
