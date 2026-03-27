@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Shield, Loader2, KeyRound, UserPlus, Save, UserX, RotateCcw, Trash2, X } from 'lucide-react';
+import { ArrowLeft, Shield, Loader2, KeyRound, UserPlus, Save, UserX, RotateCcw, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -688,6 +688,9 @@ export function Admin() {
               {users.map((user) => {
                 const draftPosition = (profileDrafts[user.id]?.position ?? '').trim();
                 const positionSelectValue = positionOptions.includes(draftPosition) ? draftPosition : undefined;
+                const canDeleteSelectedPosition = Boolean(
+                  positionSelectValue && !protectedPositions.has(positionSelectValue),
+                );
                 return (
                   <div
                     key={user.id}
@@ -751,47 +754,19 @@ export function Admin() {
                             ))}
                           </SelectContent>
                         </Select>
-                        {draftPosition && !protectedPositions.has(draftPosition) && (
+                        {canDeleteSelectedPosition && (
                           <Button
                             type="button"
                             variant="outline"
                             size="sm"
                             className="h-8"
-                            onClick={() => setDeleteTargetPosition(draftPosition)}
+                            onClick={() => setDeleteTargetPosition(positionSelectValue ?? null)}
                             disabled={isSaving}
                           >
                             <Trash2 className="h-3 w-3 mr-1" />
                             {t('admin.deletePositionOption')}
                           </Button>
                         )}
-                      </div>
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        {positionOptions.map((position) => (
-                          <div
-                            key={position}
-                            className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs"
-                          >
-                            <button
-                              type="button"
-                              className="hover:text-primary"
-                              onClick={() => handleProfileChange(user.id, 'position', position)}
-                              disabled={isSaving}
-                            >
-                              {position}
-                            </button>
-                            {!protectedPositions.has(position) && (
-                              <button
-                                type="button"
-                                className="text-muted-foreground hover:text-destructive"
-                                onClick={() => setDeleteTargetPosition(position)}
-                                disabled={isSaving}
-                                title={t('admin.deletePositionOption')}
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
-                            )}
-                          </div>
-                        ))}
                       </div>
                     </div>
                     <div className="space-y-1">
