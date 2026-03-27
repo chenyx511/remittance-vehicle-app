@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <base href="/remittance-vehicle-app/">
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <meta name="theme-color" content="#0f172a" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="送金・車両申請プラットフォーム" />
+    <meta name="description" content="企业汇款审批与用车申请管理系统" />
+
+    <!-- PWA Manifest（相对路径，适配 GitHub Pages 子路径） -->
+    <link rel="manifest" href="./manifest.json" />
+
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="./icon-192x192.png" />
+    <link rel="apple-touch-icon" sizes="72x72" href="./icon-72x72.png" />
+    <link rel="apple-touch-icon" sizes="144x144" href="./icon-144x144.png" />
+    <link rel="apple-touch-icon" sizes="192x192" href="./icon-192x192.png" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="./icon-72x72.png" />
+
+    <title>送金・車両申請プラットフォーム</title>
+
+    <style>
+      /* Critical CSS for loading state */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background-color: #ffffff;
+      }
+      #root {
+        width: 100%;
+        height: 100%;
+      }
+      .loading-screen {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        color: white;
+      }
+      .loading-spinner {
+        width: 48px;
+        height: 48px;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        border-top-color: white;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      /* Hide Kimi Agent watermark */
+      .kimi-agent,
+      [class*='kimi'],
+      [id*='kimi'],
+      div[data-testid*='kimi'],
+      .fixed.bottom-4.right-4,
+      .fixed.bottom-2.right-2 {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+      }
+    </style>
+    <script type="module" crossorigin src="/remittance-vehicle-app/assets/index-Bx7PYowV.js"></script>
+    <link rel="modulepreload" crossorigin href="/remittance-vehicle-app/assets/supabase-IOUfrn3O.js">
+    <link rel="modulepreload" crossorigin href="/remittance-vehicle-app/assets/uploadUtils-90mnptDU.js">
+    <link rel="modulepreload" crossorigin href="/remittance-vehicle-app/assets/permissions-Bx9FvV9C.js">
+    <link rel="stylesheet" crossorigin href="/remittance-vehicle-app/assets/index-Bdlhd_at.css">
+  </head>
+  <body>
+    <div id="root">
+      <div class="loading-screen">
+        <div class="loading-spinner"></div>
+        <p style="margin-top: 16px; font-family: system-ui, sans-serif">加载中...</p>
+      </div>
+    </div>
+
+    <!-- 相对路径，适配子路径部署（如 GitHub Pages） -->
+    <script>
+      // 临时停用 SW：避免 GitHub Pages 缓存导致页面代码与数据逻辑不同步
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+          navigator.serviceWorker.getRegistrations().then(function(registrations) {
+            registrations.forEach(function(reg) {
+              reg.unregister();
+            });
+          });
+        });
+      }
+      // 若 8 秒后仍为加载态，提示用户（可能是脚本 404 或缓存问题）
+      setTimeout(function() {
+        var root = document.getElementById('root');
+        var loading = root && root.querySelector('.loading-screen');
+        if (loading) {
+          loading.innerHTML = '<p style="font-family: system-ui; text-align: center;">加载超时，请按 <kbd>Ctrl+Shift+R</kbd>（Mac: <kbd>Cmd+Shift+R</kbd>）强制刷新，或按 F12 打开控制台查看报错。</p>';
+        }
+      }, 8000);
+    </script>
+  </body>
+</html>
